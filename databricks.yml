@@ -1,0 +1,26 @@
+# Este arquivo define a estrutura do projeto e como ele é implantado
+# no Databricks usando Databricks Asset Bundles (DABs).
+# Docs: https://docs.databricks.com/dev-tools/bundles/index.html
+
+bundle:
+  name: cea_aw
+
+include:
+  - resources/*.yml
+
+# Targets de deployment
+# O schema e catalog padrão do dbt são definidos em dbt_profiles/profiles.yml
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-56352174-c77f.cloud.databricks.com
+
+  # Descomentar quando quiser configurar produção
+  # prod:
+  #   mode: production
+  #   workspace:
+  #     host: https://dbc-56352174-c77f.cloud.databricks.com
+  #   run_as:
+  #     service_principal_name: sp-cea-aw-prod
