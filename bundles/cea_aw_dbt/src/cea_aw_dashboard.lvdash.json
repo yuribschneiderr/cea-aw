@@ -1,0 +1,714 @@
+{
+  "datasets": [
+    {
+      "name": "ds_kpi_01",
+      "displayName": "Total de Pedidos",
+      "query": "SELECT COUNT(DISTINCT fk_pedido_venda) AS total_pedidos FROM fct_pedidos_vendas"
+    },
+    {
+      "name": "ds_kpi_02",
+      "displayName": "Total de Itens Comprados",
+      "query": "SELECT SUM(quantidade) AS total_itens_comprados FROM fct_pedidos_vendas"
+    },
+    {
+      "name": "ds_kpi_03",
+      "displayName": "Valor Total Negociado",
+      "query": "SELECT SUM(quantidade * preco_unitario) AS valor_total_negociado FROM fct_pedidos_vendas"
+    },
+    {
+      "name": "ds_bar_01",
+      "displayName": "Faturamento por Produto Top 15",
+      "query": "SELECT p.nome_produto AS produto, SUM(f.quantidade * f.preco_unitario) AS faturamento_total FROM fct_pedidos_vendas f JOIN dim_produtos p ON f.fk_produto = p.pk_produto GROUP BY p.nome_produto ORDER BY faturamento_total DESC LIMIT 15"
+    },
+    {
+      "name": "ds_bar_02",
+      "displayName": "Faturamento por Tipo de Cartao",
+      "query": "SELECT tipo_cartao AS cartao, SUM(quantidade * preco_unitario) AS faturamento_total FROM fct_pedidos_vendas GROUP BY tipo_cartao ORDER BY faturamento_total DESC"
+    },
+    {
+      "name": "ds_bar_03",
+      "displayName": "Faturamento por Motivo de Venda",
+      "query": "SELECT motivos_venda AS motivo, SUM(quantidade * preco_unitario) AS faturamento_total FROM fct_pedidos_vendas GROUP BY motivos_venda ORDER BY faturamento_total DESC"
+    },
+    {
+      "name": "ds_bar_04",
+      "displayName": "Faturamento por Status do Pedido",
+      "query": "SELECT CASE status_pedido WHEN 1 THEN 'Em Processamento' WHEN 2 THEN 'Aprovado' WHEN 3 THEN 'Atrasado' WHEN 4 THEN 'Rejeitado' WHEN 5 THEN 'Enviado' WHEN 6 THEN 'Cancelado' ELSE 'Desconhecido' END AS status, SUM(quantidade * preco_unitario) AS faturamento_total FROM fct_pedidos_vendas GROUP BY status_pedido ORDER BY faturamento_total DESC"
+    },
+    {
+      "name": "ds_geo_01",
+      "displayName": "Faturamento por Pais e Estado",
+      "query": "SELECT c.pais, c.estado, SUM(f.quantidade * f.preco_unitario) AS faturamento_total FROM fct_pedidos_vendas f JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente GROUP BY c.pais, c.estado ORDER BY faturamento_total DESC"
+    },
+    {
+      "name": "ds_line_01",
+      "displayName": "Ticket Medio Mensal",
+      "query": "WITH pedidos_agrupados AS (SELECT d.ano_mes, f.fk_pedido_venda, SUM(f.quantidade * f.preco_unitario) AS valor_pedido FROM fct_pedidos_vendas f JOIN dim_datas d ON f.fk_data = d.pk_data GROUP BY d.ano_mes, f.fk_pedido_venda) SELECT ano_mes AS mes, AVG(valor_pedido) AS ticket_medio FROM pedidos_agrupados GROUP BY ano_mes ORDER BY mes"
+    },
+    {
+      "name": "ds_top_01",
+      "displayName": "Top 10 Clientes",
+      "query": "SELECT c.nome_cliente AS cliente, SUM(f.quantidade * f.preco_unitario) AS faturamento_total FROM fct_pedidos_vendas f JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente GROUP BY c.nome_cliente ORDER BY faturamento_total DESC LIMIT 10"
+    },
+    {
+      "name": "ds_top_02",
+      "displayName": "Top 5 Cidades",
+      "query": "SELECT c.cidade AS cidade, SUM(f.quantidade * f.preco_unitario) AS faturamento_total FROM fct_pedidos_vendas f JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente GROUP BY c.cidade ORDER BY faturamento_total DESC LIMIT 5"
+    },
+    {
+      "name": "ds_time_01",
+      "displayName": "Serie Temporal Vendas",
+      "query": "SELECT d.ano_mes AS mes, COUNT(DISTINCT f.fk_pedido_venda) AS total_pedidos, SUM(f.quantidade * f.preco_unitario) AS faturamento_total FROM fct_pedidos_vendas f JOIN dim_datas d ON f.fk_data = d.pk_data GROUP BY d.ano_mes ORDER BY mes"
+    },
+    {
+      "name": "ds_promo_01",
+      "displayName": "Produto Mais Vendido em Promocoes",
+      "query": "SELECT p.nome_produto AS produto, SUM(f.quantidade) AS total_vendido FROM fct_pedidos_vendas f JOIN dim_produtos p ON f.fk_produto = p.pk_produto WHERE f.motivos_venda LIKE '%Promotion%' GROUP BY p.nome_produto ORDER BY total_vendido DESC LIMIT 10"
+    }
+  ],
+  "pages": [
+    {
+      "name": "page_main",
+      "displayName": "Painel de Vendas — Adventure Works",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "w_kpi_pedidos",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi_01",
+                  "fields": [
+                    {
+                      "name": "total_pedidos",
+                      "expression": "`total_pedidos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_pedidos",
+                  "displayName": "Total de Pedidos"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "w_kpi_itens",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi_02",
+                  "fields": [
+                    {
+                      "name": "total_itens_comprados",
+                      "expression": "`total_itens_comprados`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_itens_comprados",
+                  "displayName": "Total de Itens Comprados"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "w_kpi_valor",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_kpi_03",
+                  "fields": [
+                    {
+                      "name": "valor_total_negociado",
+                      "expression": "`valor_total_negociado`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "valor_total_negociado",
+                  "displayName": "Valor Total Negociado (R$)"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 0,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_produto",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_bar_01",
+                  "fields": [
+                    {
+                      "name": "produto",
+                      "expression": "`produto`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "produto",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Produto"
+                },
+                "y": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_cartao",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_bar_02",
+                  "fields": [
+                    {
+                      "name": "cartao",
+                      "expression": "`cartao`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "cartao",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Tipo de Cartão"
+                },
+                "y": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 2,
+            "width": 2,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_motivo",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_bar_03",
+                  "fields": [
+                    {
+                      "name": "motivo",
+                      "expression": "`motivo`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "motivo",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Motivo de Venda"
+                },
+                "y": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_status",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_bar_04",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "status",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Status do Pedido"
+                },
+                "y": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_geo",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_geo_01",
+                  "fields": [
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    },
+                    {
+                      "name": "estado",
+                      "expression": "`estado`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                },
+                "y": {
+                  "fieldName": "estado",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Estado"
+                },
+                "color": {
+                  "fieldName": "pais",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "País"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_line_ticket",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_line_01",
+                  "fields": [
+                    {
+                      "name": "mes",
+                      "expression": "`mes`"
+                    },
+                    {
+                      "name": "ticket_medio",
+                      "expression": "`ticket_medio`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "mes",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês"
+                },
+                "y": {
+                  "fieldName": "ticket_medio",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket Médio"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_line_serie",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_time_01",
+                  "fields": [
+                    {
+                      "name": "mes",
+                      "expression": "`mes`"
+                    },
+                    {
+                      "name": "total_pedidos",
+                      "expression": "`total_pedidos`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "mes",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês"
+                },
+                "y": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_top_clientes",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_top_01",
+                  "fields": [
+                    {
+                      "name": "cliente",
+                      "expression": "`cliente`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                },
+                "y": {
+                  "fieldName": "cliente",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Cliente"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 26,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_top_cidades",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_top_02",
+                  "fields": [
+                    {
+                      "name": "cidade",
+                      "expression": "`cidade`"
+                    },
+                    {
+                      "name": "faturamento_total",
+                      "expression": "`faturamento_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "faturamento_total",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Faturamento Total"
+                },
+                "y": {
+                  "fieldName": "cidade",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Cidade"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 26,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_bar_promo",
+            "textbox_spec": null,
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_promo_01",
+                  "fields": [
+                    {
+                      "name": "produto",
+                      "expression": "`produto`"
+                    },
+                    {
+                      "name": "total_vendido",
+                      "expression": "`total_vendido`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "produto",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Produto"
+                },
+                "y": {
+                  "fieldName": "total_vendido",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Total Vendido"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 32,
+            "width": 6,
+            "height": 6
+          }
+        }
+      ]
+    }
+  ]
+}
