@@ -1,0 +1,163 @@
+sources:
+  - name: adventure_works
+    description: "Dados brutos do Adventure Works, uma indústria fictícia de bicicletas."
+    schema: adventure_works
+    tables:
+      - name: salesorderheader
+        description: "Cabeçalho dos pedidos de venda."
+        columns:
+          - name: salesorderid
+            description: "Chave primária do pedido de venda."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: salesorderdetail
+        description: "Detalhes dos itens de cada pedido de venda."
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - salesorderid
+                - salesorderdetailid
+
+      - name: customer
+        description: "Cadastro de clientes."
+        columns:
+          - name: customerid
+            description: "Chave primária do cliente."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: person
+        description: "Dados pessoais (nome, tipo de pessoa)."
+        columns:
+          - name: businessentityid
+            description: "Chave primária da pessoa."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: businessentityaddress
+        description: "Relacionamento entre entidade de negócio e endereço."
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - businessentityid
+                - addressid
+                - addresstypeid
+
+      - name: address
+        description: "Endereços físicos."
+        columns:
+          - name: addressid
+            description: "Chave primária do endereço."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: stateprovince
+        description: "Estados e províncias."
+        columns:
+          - name: stateprovinceid
+            description: "Chave primária do estado/província."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: countryregion
+        description: "Países e regiões."
+        columns:
+          - name: countryregioncode
+            description: "Chave primária do país/região."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: product
+        description: "Cadastro de produtos."
+        columns:
+          - name: productid
+            description: "Chave primária do produto."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: productsubcategory
+        description: "Subcategorias de produto."
+        columns:
+          - name: productsubcategoryid
+            description: "Chave primária da subcategoria."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: productcategory
+        description: "Categorias de produto."
+        columns:
+          - name: productcategoryid
+            description: "Chave primária da categoria."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: salesreason
+        description: "Motivos de venda (promoção, preço, etc)."
+        columns:
+          - name: salesreasonid
+            description: "Chave primária do motivo de venda."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: salesorderheadersalesreason
+        description: "Tabela ponte entre pedidos e motivos de venda."
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - salesorderid
+                - salesreasonid
+
+      - name: creditcard
+        description: "Cartões de crédito cadastrados."
+        columns:
+          - name: creditcardid
+            description: "Chave primária do cartão de crédito."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: personcreditcard
+        description: "Relacionamento entre pessoa e cartão de crédito."
+        data_tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - businessentityid
+                - creditcardid
+
+      - name: salesterritory
+        description: "Territórios de venda."
+        columns:
+          - name: territoryid
+            description: "Chave primária do território de venda."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: shipmethod
+        description: "Métodos de envio."
+        columns:
+          - name: shipmethodid
+            description: "Chave primária do método de envio."
+            data_tests:
+              - unique
+              - not_null
+
+      - name: specialoffer
+        description: "Ofertas especiais e descontos."
+        columns:
+          - name: specialofferid
+            description: "Chave primária da oferta especial."
+            data_tests:
+              - unique
+              - not_null
