@@ -35,3 +35,6 @@ pip-delete-this-directory.txt
 # Claude
 .claude/
 CLAUDE.md
+
+# Setup / Steps scripts
+.steps/

@@ -1,0 +1,66 @@
+version: 2
+
+models:
+  - name: int_dim_clientes
+    description: "Dimensão intermediária de clientes com endereço e localização."
+    columns:
+      - name: pk_cliente
+        description: "Chave primária do cliente."
+        data_tests:
+          - unique
+          - not_null
+      - name: numero_conta
+        description: "Número da conta do cliente."
+      - name: nome_cliente
+        description: "Nome completo do cliente."
+      - name: tipo_pessoa
+        description: "Tipo de pessoa (SC, IN, SP, etc)."
+      - name: promocao_email
+        description: "Status de promoção por email."
+      - name: cidade
+        description: "Cidade do cliente."
+      - name: cep
+        description: "CEP do cliente."
+      - name: estado
+        description: "Estado do cliente."
+      - name: codigo_estado
+        description: "Código do estado."
+      - name: nome_territorio
+        description: "Nome do território de venda."
+      - name: grupo_territorio
+        description: "Grupo do território de venda."
+
+  - name: int_dim_produtos
+    description: "Dimensão intermediária de produtos com categorias."
+    columns:
+      - name: pk_produto
+        description: "Chave primária do produto."
+        data_tests:
+          - unique
+          - not_null
+
+
+
+  - name: int_dim_datas
+    description: "Dimensão intermediária de datas gerada automaticamente."
+    columns:
+      - name: pk_data
+        description: "Chave primária (formato yyyyMMdd)."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_fct_pedidos_vendas
+    description: "Fato intermediária de pedidos de vendas, no grão de linha de detalhe do pedido."
+    columns:
+      - name: pk_pedido_venda_detalhe
+        description: "Chave primária do detalhe do pedido."
+        data_tests:
+          - unique
+          - not_null
+      - name: fk_pedido_venda
+        description: "Chave estrangeira para o cabeçalho do pedido."
+      - name: tipo_cartao
+        description: "Tipo de cartão de crédito."
+      - name: motivos_venda
+        description: "Motivos da venda concatenados."

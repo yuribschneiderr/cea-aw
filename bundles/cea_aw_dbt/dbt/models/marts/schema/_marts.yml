@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: dim_clientes
+    description: "Dimensão de clientes."
+    columns:
+      - name: pk_cliente
+        description: "Chave primária do cliente."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_produtos
+    description: "Dimensão de produtos."
+    columns:
+      - name: pk_produto
+        description: "Chave primária do produto."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_datas
+    description: "Dimensão de datas."
+    columns:
+      - name: pk_data
+        description: "Chave primária da data no formato yyyyMMdd."
+        data_tests:
+          - unique
+          - not_null
+
+
+
+  - name: dim_metodos_envio
+    description: "Dimensão de métodos de envio."
+    columns:
+      - name: pk_metodo_envio
+        description: "Chave primária do método de envio."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: dim_ofertas_especiais
+    description: "Dimensão de ofertas especiais."
+    columns:
+      - name: pk_oferta_especial
+        description: "Chave primária da oferta especial."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: fct_pedidos_vendas
+    description: "Tabela Fato de pedidos de vendas. O grão é um item de linha por pedido."
+    columns:
+      - name: pk_pedido_venda_detalhe
+        description: "Chave primária do detalhe do pedido."
+        data_tests:
+          - unique
+          - not_null
+      - name: fk_data
+        description: "Chave estrangeira para a dimensão de data (data do pedido)."
+        data_tests:
+          - relationships:
+              to: ref('dim_datas')
+              field: pk_data
+      - name: fk_cliente
+        description: "Chave estrangeira para a dimensão de clientes."
+        data_tests:
+          - relationships:
+              to: ref('dim_clientes')
+              field: pk_cliente
+      - name: fk_metodo_envio
+        description: "Chave estrangeira para a dimensão de métodos de envio."
+        data_tests:
+          - relationships:
+              to: ref('dim_metodos_envio')
+              field: pk_metodo_envio
+      - name: fk_produto
+        description: "Chave estrangeira para a dimensão de produtos."
+        data_tests:
+          - relationships:
+              to: ref('dim_produtos')
+              field: pk_produto
+      - name: fk_oferta_especial
+        description: "Chave estrangeira para a dimensão de ofertas especiais."
+        data_tests:
+          - relationships:
+              to: ref('dim_ofertas_especiais')
+              field: pk_oferta_especial
+      - name: tipo_cartao
+        description: "Tipo do cartão de crédito usado."
+      - name: motivos_venda
+        description: "Motivos de venda concatenados."
