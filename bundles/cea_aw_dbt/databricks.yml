@@ -1,0 +1,55 @@
+# Este arquivo define a estrutura do projeto e como ele é implantado
+# no Databricks usando Databricks Asset Bundles (DABs).
+# Docs: https://docs.databricks.com/dev-tools/bundles/index.html
+
+bundle:
+  name: cea_aw
+
+# Targets de deployment
+# O schema e catalog padrão do dbt são definidos em dbt_profiles/profiles.yml
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-56352174-c77f.cloud.databricks.com
+
+  # Descomentar quando quiser configurar produção
+  # prod:
+  #   mode: production
+  #   workspace:
+  #     host: https://dbc-56352174-c77f.cloud.databricks.com
+  #   run_as:
+  #     service_principal_name: sp-cea-aw-prod
+
+resources:
+  dashboards:
+    cea_aw_dashboard:
+      display_name: "CEA AW - Painel de Vendas"
+      file_path: ./src/cea_aw_dashboard.lvdash.json
+      warehouse_id: b83ff5bf59f6214a
+      embed_credentials: false
+      dataset_catalog: workspace
+      dataset_schema: dev_cea_aw_marts
+
+  jobs:
+    cea_aw_dbt_job:
+      name: cea_aw_dbt_job
+      tasks:
+        - task_key: dbt_build
+          dbt_task:
+            project_directory: dbt
+            profiles_directory: dbt_profiles
+            catalog: workspace
+            schema: dev_cea_aw
+            commands:
+              - "dbt deps"
+              - "dbt build"
+            warehouse_id: b83ff5bf59f6214a
+          environment_key: default
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "2"
+            dependencies:
+              - dbt-databricks>=1.8.0,<2.0.0
