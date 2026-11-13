@@ -19,20 +19,22 @@ Optamos por uma modelagem dimensional estruturada nas seguintes camadas, respeit
    - Aplicação de testes de integridade básica (`unique`, `not_null`) em chaves primárias.
 
 2. **Intermediate (Prata/Silver):**
-   - Junções (JOINs) entre entidades altamente normalizadas (ex: `Person` + `Customer` + `Address`).
+   - Junções (JOINs) entre entidades altamente normalizadas (ex: `Customer` + `Person` + `SalesTerritory`, `Address` + `StateProvince` + `CountryRegion`).
    - Geração de uma espinha dorsal de datas (Date Spine) construída dinamicamente.
    - Desnormalização e agregação (ex: concatenar múltiplos motivos de venda num mesmo pedido).
 
 3. **Marts (Ouro/Gold):**
    - Criação do **Star Schema** focado nas análises de vendas, expondo Views/Tables amigáveis ao negócio:
      - Fatos: `fct_pedidos_vendas` (com as chaves estrangeiras, métricas de negócio, tipos de cartão e motivos agregados).
-     - Dimensões: `dim_clientes` (com localização geográfica), `dim_produtos` (com categorias e subcategorias), `dim_datas`, `dim_metodos_envio`, `dim_ofertas_especiais`.
+     - Dimensões: `dim_clientes` (com território de vendas), `dim_localidades` (cidade, estado e país do endereço de entrega do pedido), `dim_produtos` (com categorias e subcategorias), `dim_datas`, `dim_metodos_envio`, `dim_ofertas_especiais`.
+   - A localização vem do endereço de entrega do pedido, e não do cadastro do cliente: clientes do tipo loja não possuem endereço pessoal, enquanto todo pedido possui endereço de entrega.
 
 ### Diagrama do Modelo Dimensional (Star Schema)
 
 ```mermaid
 erDiagram
     fct_pedidos_vendas }|--|| dim_clientes : "fk_cliente"
+    fct_pedidos_vendas }|--|| dim_localidades : "fk_localidade"
     fct_pedidos_vendas }|--|| dim_produtos : "fk_produto"
     fct_pedidos_vendas }|--|| dim_datas : "fk_data"
     fct_pedidos_vendas }|--|| dim_metodos_envio : "fk_metodo_envio"
@@ -43,13 +45,17 @@ erDiagram
         int fk_pedido_venda
         int fk_data FK
         int fk_cliente FK
+        int fk_localidade FK
         int fk_metodo_envio FK
         int fk_produto FK
         int fk_oferta_especial FK
         timestamp data_pedido
+        string descricao_status
         int quantidade
         decimal preco_unitario
         decimal desconto_unitario
+        decimal valor_bruto_linha
+        decimal valor_desconto_linha
         decimal valor_total_linha
         string tipo_cartao
         string motivos_venda
@@ -58,10 +64,16 @@ erDiagram
     dim_clientes {
         int pk_cliente PK
         string nome_cliente
+        string tipo_pessoa
+        string nome_territorio
+        string grupo_territorio
+    }
+
+    dim_localidades {
+        int pk_localidade PK
         string cidade
         string estado
         string pais
-        string nome_territorio
     }
 
     dim_produtos {
@@ -100,6 +112,9 @@ Para garantir a confiabilidade analítica, implementamos:
 
 Com as tabelas consolidadas geradas pela camada Marts no schema `dev_cea_aw_marts`, o dashboard atende às necessidades dos diretores e partes interessadas, fornecendo métricas estratégicas, como:
 - Número de pedidos, quantidade comprada e valor total negociado.
-- Análise de tickets médios.
+- Análise de tickets médios (mensal, anual por país e por produto).
 - Top 10 Clientes e Top 5 Cidades com mais faturamento.
-- Série temporal mensal de faturamento.
+- Série temporal mensal de faturamento, pedidos e quantidade.
+- Produtos mais vendidos com o motivo de venda "Promotion".
+
+Todos os gráficos respondem aos filtros de período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado e país. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.

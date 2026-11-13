@@ -12,9 +12,9 @@ with
             , cast(orderqty as int) as quantidade
             , cast(productid as int) as fk_produto
             , cast(specialofferid as int) as fk_oferta_especial
-            , cast(unitprice as decimal(18, 2)) as preco_unitario
+            -- unitprice has 4 decimal places in the source (money); rounding it to 2 breaks the audited totals
+            , cast(unitprice as decimal(18, 4)) as preco_unitario
             , cast(unitpricediscount as decimal(18, 4)) as desconto_unitario
-            , cast(orderqty * unitprice * (1 - unitpricediscount) as decimal(38, 6)) as valor_total_linha
             , cast(modifieddate as timestamp) as data_modificacao
 
         from fonte

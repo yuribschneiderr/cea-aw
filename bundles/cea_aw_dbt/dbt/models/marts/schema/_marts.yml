@@ -2,62 +2,177 @@ version: 2
 
 models:
   - name: dim_clientes
-    description: "Dimensão de clientes."
+    description: "Dimensão de clientes. Uma linha por cliente (pessoa física ou loja). A localização não fica aqui: ela vem do endereço de entrega do pedido (dim_localidades)."
     columns:
       - name: pk_cliente
         description: "Chave primária do cliente."
         data_tests:
           - unique
           - not_null
+      - name: nome_cliente
+        description: "Nome completo do cliente (primeiro nome, nome do meio e sobrenome). Nulo para clientes do tipo loja sem pessoa de contato."
+      - name: tipo_pessoa
+        description: "Tipo de pessoa: IN = consumidor individual, SC = contato de loja, entre outros."
+      - name: promocao_email
+        description: "Preferência de promoções por e-mail: 0 = não recebe, 1 = recebe da Adventure Works, 2 = recebe da Adventure Works e de parceiros."
+      - name: nome_territorio
+        description: "Nome do território de vendas do cliente."
+      - name: grupo_territorio
+        description: "Grupo geográfico do território de vendas (North America, Europe, Pacific)."
 
   - name: dim_produtos
-    description: "Dimensão de produtos."
+    description: "Dimensão de produtos, com subcategoria e categoria. Uma linha por produto."
     columns:
       - name: pk_produto
         description: "Chave primária do produto."
         data_tests:
           - unique
           - not_null
+      - name: nome_produto
+        description: "Nome do produto."
+      - name: numero_produto
+        description: "Código de identificação do produto."
+      - name: cor
+        description: "Cor do produto."
+      - name: tamanho
+        description: "Tamanho do produto."
+      - name: peso
+        description: "Peso do produto."
+      - name: custo_padrao
+        description: "Custo padrão do produto, em dólares."
+      - name: preco_lista
+        description: "Preço de tabela do produto, em dólares."
+      - name: linha_produto
+        description: "Linha do produto: R = Road, M = Mountain, T = Touring, S = Standard."
+      - name: classe
+        description: "Classe do produto: H = alta, M = média, L = baixa."
+      - name: estilo
+        description: "Estilo do produto: W = feminino, M = masculino, U = universal."
+      - name: dias_fabricacao
+        description: "Número de dias necessários para fabricar o produto."
+      - name: flag_fabricacao_propria
+        description: "Verdadeiro se o produto é fabricado internamente; falso se é comprado."
+      - name: flag_produto_acabado
+        description: "Verdadeiro se o produto é um item vendável (produto acabado)."
+      - name: data_inicio_venda
+        description: "Data em que o produto começou a ser vendido."
+      - name: data_fim_venda
+        description: "Data em que o produto deixou de ser vendido."
+      - name: nome_subcategoria
+        description: "Nome da subcategoria do produto."
+      - name: nome_categoria
+        description: "Nome da categoria do produto."
 
   - name: dim_datas
-    description: "Dimensão de datas."
+    description: "Dimensão de datas. Uma linha por dia, cobrindo o intervalo entre o primeiro e o último pedido."
     columns:
       - name: pk_data
         description: "Chave primária da data no formato yyyyMMdd."
         data_tests:
           - unique
           - not_null
+      - name: data_completa
+        description: "Data no formato de calendário."
+      - name: ano
+        description: "Ano."
+      - name: mes
+        description: "Número do mês (1 a 12)."
+      - name: dia
+        description: "Dia do mês."
+      - name: trimestre
+        description: "Trimestre do ano (1 a 4)."
+      - name: dia_semana
+        description: "Número do dia da semana (1 = domingo, 7 = sábado)."
+      - name: nome_dia_semana
+        description: "Nome do dia da semana."
+      - name: nome_mes
+        description: "Nome do mês."
+      - name: ano_trimestre
+        description: "Ano e trimestre no formato yyyy-Qn."
+      - name: ano_mes
+        description: "Ano e mês no formato yyyy-MM."
+      - name: flag_fim_semana
+        description: "Verdadeiro se a data cai em sábado ou domingo."
 
-
+  - name: dim_localidades
+    description: "Dimensão de localidades. Uma linha por endereço, com cidade, estado e país. A fato se liga a ela pelo endereço de entrega do pedido."
+    columns:
+      - name: pk_localidade
+        description: "Chave primária da localidade (identificador do endereço)."
+        data_tests:
+          - unique
+          - not_null
+      - name: cidade
+        description: "Nome da cidade."
+      - name: cep
+        description: "Código postal."
+      - name: estado
+        description: "Nome do estado ou província."
+      - name: codigo_estado
+        description: "Código do estado ou província."
+      - name: pais
+        description: "Nome do país."
+      - name: codigo_pais
+        description: "Código do país."
 
   - name: dim_metodos_envio
-    description: "Dimensão de métodos de envio."
+    description: "Dimensão de métodos de envio. Uma linha por método."
     columns:
       - name: pk_metodo_envio
         description: "Chave primária do método de envio."
         data_tests:
           - unique
           - not_null
+      - name: nome_metodo_envio
+        description: "Nome do método de envio."
+      - name: taxa_base_envio
+        description: "Valor mínimo cobrado pelo envio, em dólares."
+      - name: taxa_envio
+        description: "Valor cobrado por unidade de peso, em dólares."
+      - name: data_modificacao
+        description: "Data da última alteração do registro na origem."
 
   - name: dim_ofertas_especiais
-    description: "Dimensão de ofertas especiais."
+    description: "Dimensão de ofertas especiais (promoções e descontos). Uma linha por oferta."
     columns:
       - name: pk_oferta_especial
         description: "Chave primária da oferta especial."
         data_tests:
           - unique
           - not_null
+      - name: descricao_oferta
+        description: "Descrição da oferta."
+      - name: percentual_desconto
+        description: "Percentual de desconto da oferta (0.10 = 10%)."
+      - name: tipo_oferta
+        description: "Tipo da oferta."
+      - name: categoria_oferta
+        description: "Público da oferta: Reseller (revendedor) ou Customer (consumidor)."
+      - name: data_inicio
+        description: "Data de início da oferta."
+      - name: data_fim
+        description: "Data de término da oferta."
+      - name: quantidade_minima
+        description: "Quantidade mínima para a oferta se aplicar."
+      - name: quantidade_maxima
+        description: "Quantidade máxima para a oferta se aplicar."
+      - name: data_modificacao
+        description: "Data da última alteração do registro na origem."
 
   - name: fct_pedidos_vendas
-    description: "Tabela Fato de pedidos de vendas. O grão é um item de linha por pedido."
+    description: "Tabela fato de pedidos de vendas. O grão é um item de linha por pedido. Valores em dólares."
     columns:
       - name: pk_pedido_venda_detalhe
-        description: "Chave primária do detalhe do pedido."
+        description: "Chave primária do item do pedido."
         data_tests:
           - unique
           - not_null
+      - name: fk_pedido_venda
+        description: "Número do pedido (dimensão degenerada). O número de pedidos é a contagem distinta desta coluna."
+        data_tests:
+          - not_null
       - name: fk_data
-        description: "Chave estrangeira para a dimensão de data (data do pedido)."
+        description: "Chave estrangeira para a dimensão de datas (data do pedido)."
         data_tests:
           - relationships:
               to: ref('dim_datas')
@@ -68,6 +183,12 @@ models:
           - relationships:
               to: ref('dim_clientes')
               field: pk_cliente
+      - name: fk_localidade
+        description: "Chave estrangeira para a dimensão de localidades (endereço de entrega do pedido)."
+        data_tests:
+          - relationships:
+              to: ref('dim_localidades')
+              field: pk_localidade
       - name: fk_metodo_envio
         description: "Chave estrangeira para a dimensão de métodos de envio."
         data_tests:
@@ -86,7 +207,43 @@ models:
           - relationships:
               to: ref('dim_ofertas_especiais')
               field: pk_oferta_especial
+      - name: data_pedido
+        description: "Data em que o pedido foi feito."
+      - name: data_vencimento
+        description: "Data de vencimento do pedido."
+      - name: data_envio
+        description: "Data em que o pedido foi enviado."
+      - name: status_pedido
+        description: "Código do status do pedido (1 a 6)."
+      - name: descricao_status
+        description: "Descrição do status: Em processamento, Aprovado, Em espera, Rejeitado, Enviado ou Cancelado."
+      - name: flag_pedido_online
+        description: "Verdadeiro se o pedido foi feito online pelo cliente; falso se foi feito por um vendedor."
+      - name: numero_pedido_compra
+        description: "Número do pedido de compra informado pelo cliente."
+      - name: numero_conta
+        description: "Número da conta contábil do pedido."
+      - name: quantidade
+        description: "Quantidade comprada do produto neste item."
+      - name: preco_unitario
+        description: "Preço unitário do produto neste item, com 4 casas decimais."
+      - name: desconto_unitario
+        description: "Percentual de desconto aplicado ao preço unitário (0.02 = 2%)."
+      - name: valor_bruto_linha
+        description: "Valor bruto do item: preco_unitario * quantidade."
+      - name: valor_desconto_linha
+        description: "Valor do desconto do item: preco_unitario * quantidade * desconto_unitario."
+      - name: valor_total_linha
+        description: "Valor líquido do item: preco_unitario * quantidade * (1 - desconto_unitario)."
+      - name: subtotal
+        description: "Subtotal do pedido. Valor do cabeçalho, repetido em cada item: não somar no grão da fato."
+      - name: valor_imposto
+        description: "Imposto do pedido. Valor do cabeçalho, repetido em cada item: não somar no grão da fato."
+      - name: valor_frete
+        description: "Frete do pedido. Valor do cabeçalho, repetido em cada item: não somar no grão da fato."
+      - name: valor_total_devido
+        description: "Total devido do pedido (subtotal + imposto + frete). Valor do cabeçalho, repetido em cada item: não somar no grão da fato."
       - name: tipo_cartao
-        description: "Tipo do cartão de crédito usado."
+        description: "Tipo do cartão de crédito usado no pedido. 'N/A' quando o pedido não foi pago com cartão."
       - name: motivos_venda
-        description: "Motivos de venda concatenados."
+        description: "Motivos de venda do pedido em ordem alfabética, separados por vírgula. 'Nenhum' quando o pedido não tem motivo registrado."

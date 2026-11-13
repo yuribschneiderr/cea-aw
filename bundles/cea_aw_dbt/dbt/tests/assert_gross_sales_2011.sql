@@ -12,4 +12,4 @@ with
 
 select *
 from vendas_2011
-where vendas_brutas not between 12646105.00 and 12646113.00
+where vendas_brutas != 12646112.16
