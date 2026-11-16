@@ -9,7 +9,9 @@ bundle:
 # O schema e catalog padrão do dbt são definidos em dbt_profiles/profiles.yml
 targets:
   dev:
-    mode: development
+    # No "mode: development" on purpose: that mode prefixes every resource name with
+    # "[dev <user>]" (and the prefix cannot be emptied while the mode is set). This target
+    # is the delivered version, so the dashboard and the job keep their real names.
     default: true
     workspace:
       host: https://dbc-56352174-c77f.cloud.databricks.com

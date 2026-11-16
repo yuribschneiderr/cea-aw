@@ -92,12 +92,43 @@
         "ORDER BY quantidade DESC\n",
         "LIMIT 10\n"
       ]
+    },
+    {
+      "name": "ds_top_clientes",
+      "displayName": "Top 10 clientes",
+      "queryLines": [
+        "-- Os 10 clientes com maior valor total negociado (preço unitário x quantidade)\n",
+        "SELECT\n",
+        "  concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')') AS cliente,\n",
+        "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
+        "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "GROUP BY ALL\n",
+        "ORDER BY valor_bruto DESC, cliente\n",
+        "LIMIT 10\n"
+      ]
+    },
+    {
+      "name": "ds_top_cidades",
+      "displayName": "Top 5 cidades",
+      "queryLines": [
+        "-- As 5 cidades (endereço de entrega) com maior valor total negociado.\n",
+        "-- Agrupa por cidade, estado e país: o mesmo nome de cidade existe em mais de um estado\n",
+        "SELECT\n",
+        "  concat(l.cidade, ' (', l.pais, ')') AS cidade,\n",
+        "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
+        "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "GROUP BY l.cidade, l.estado, l.pais\n",
+        "ORDER BY valor_bruto DESC, cidade\n",
+        "LIMIT 5\n"
+      ]
     }
   ],
   "pages": [
     {
-      "name": "page_main",
-      "displayName": "Painel de Vendas",
+      "name": "page_visao_geral",
+      "displayName": "Visão geral",
       "pageType": "PAGE_TYPE_CANVAS",
       "layout": [
         {
@@ -106,7 +137,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Painel de Vendas — Adventure Works\n",
-                "Valores em dólares (US$). **Valor total negociado** = preço unitário × quantidade. **Valor líquido** = valor negociado − descontos. Os filtros abaixo se aplicam a todos os gráficos, exceto o filtro de produto no ticket médio por pedido e o gráfico do motivo \"Promotion\"."
+                "Valores em dólares (US$). **Valor total negociado** = preço unitário × quantidade. **Valor líquido** = valor negociado − descontos. Os filtros globais valem para as duas páginas, exceto o filtro de produto no ticket médio por pedido e os rankings (Top 10 clientes, Top 5 cidades e motivo \"Promotion\"), que consideram sempre o período completo."
               ]
             }
           },
@@ -117,6 +148,1328 @@
             "height": 1
           }
         },
+        {
+          "widget": {
+            "name": "kpi_pedidos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "countdistinct(pedido)",
+                      "expression": "COUNT(DISTINCT `pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(pedido)",
+                  "displayName": "Número de pedidos",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 0
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Número de pedidos"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_quantidade",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "sum(quantidade)",
+                      "expression": "SUM(`quantidade`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(quantidade)",
+                  "displayName": "Quantidade comprada",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 0
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Quantidade comprada"
+              }
+            }
+          },
+          "position": {
+            "x": 1,
+            "y": 1,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_bruto",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(valor_bruto)",
+                  "displayName": "Valor total negociado",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_liquido",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "sum(valor_liquido)",
+                      "expression": "SUM(`valor_liquido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(valor_liquido)",
+                  "displayName": "Valor líquido",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    },
+                    "abbreviation": "compact"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor líquido"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_ticket",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos",
+                  "fields": [
+                    {
+                      "name": "avg(valor_liquido_pedido)",
+                      "expression": "AVG(`valor_liquido_pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(valor_liquido_pedido)",
+                  "displayName": "Ticket médio",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    },
+                    "abbreviation": "none"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket médio"
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 1,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_faturamento",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por mês"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_ticket_mensal",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "avg(valor_liquido_pedido)",
+                      "expression": "AVG(`valor_liquido_pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(valor_liquido_pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket médio (US$)",
+                  "axis": {
+                    "title": "Ticket médio (US$)"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket médio mensal",
+                "showDescription": true,
+                "description": "Ticket médio = (valor bruto - descontos) / número de pedidos."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 3,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_pedidos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "countdistinct(pedido)",
+                      "expression": "COUNT(DISTINCT `pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "countdistinct(pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Número de pedidos",
+                  "axis": {
+                    "title": "Número de pedidos"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Número de pedidos por mês"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_quantidade",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "sum(quantidade)",
+                      "expression": "SUM(`quantidade`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(quantidade)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Quantidade comprada",
+                  "axis": {
+                    "title": "Quantidade comprada"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Quantidade comprada por mês"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 8,
+            "width": 3,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "page_dimensoes",
+      "displayName": "Análise por dimensão",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "txt_dimensoes",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Análise por dimensão\n",
+                "Quebras por produto, motivo de venda, localização (endereço de entrega), cliente e características do pedido. Os filtros globais valem para esta página; os rankings indicam na descrição quando consideram o período completo."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "txt_sec_produto",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Produto e motivo de venda"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_produto",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "produto",
+                      "expression": "`produto`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "produto",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Produto",
+                  "axis": {
+                    "title": "Produto"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por produto",
+                "showDescription": true,
+                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_ticket_produto",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "produto",
+                      "expression": "`produto`"
+                    },
+                    {
+                      "name": "avg(valor_liquido)",
+                      "expression": "AVG(`valor_liquido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(valor_liquido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket médio (US$)",
+                  "axis": {
+                    "title": "Ticket médio (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "produto",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Produto",
+                  "axis": {
+                    "title": "Produto"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket médio por produto",
+                "showDescription": true,
+                "description": "Valor líquido do produto / número de pedidos que contêm o produto."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_promocao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "fields": [
+                    {
+                      "name": "produto",
+                      "expression": "`produto`"
+                    },
+                    {
+                      "name": "sum(quantidade)",
+                      "expression": "SUM(`quantidade`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(quantidade)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Unidades vendidas",
+                  "axis": {
+                    "title": "Unidades vendidas"
+                  }
+                },
+                "y": {
+                  "fieldName": "produto",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Produto",
+                  "axis": {
+                    "title": "Produto"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Produtos mais vendidos com o motivo de venda \"Promotion\"",
+                "showDescription": true,
+                "description": "Top 10 em unidades vendidas, considerando todos os pedidos com o motivo \"On Promotion\"."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_motivo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_motivos",
+                  "fields": [
+                    {
+                      "name": "motivo_venda",
+                      "expression": "`motivo_venda`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "motivo_venda",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Motivo de venda",
+                  "axis": {
+                    "title": "Motivo de venda"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por motivo de venda",
+                "showDescription": true,
+                "description": "Pedidos com mais de um motivo contam em cada um deles."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 8,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "txt_sec_local",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Localização"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 14,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_pais",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "pais",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "País",
+                  "axis": {
+                    "title": "País"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por país"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_ticket_anual_pais",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos",
+                  "fields": [
+                    {
+                      "name": "yearly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"YEAR\", `data_pedido`)"
+                    },
+                    {
+                      "name": "avg(valor_liquido_pedido)",
+                      "expression": "AVG(`valor_liquido_pedido`)"
+                    },
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "yearly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Ano do pedido",
+                  "axis": {
+                    "title": "Ano do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(valor_liquido_pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket médio (US$)",
+                  "axis": {
+                    "title": "Ticket médio (US$)"
+                  }
+                },
+                "color": {
+                  "fieldName": "pais",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "País"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket médio anual por país",
+                "showDescription": true,
+                "description": "Ticket médio = (valor bruto - descontos) / número de pedidos."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 15,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_estado",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "estado",
+                      "expression": "`estado`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    },
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "estado",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Estado",
+                  "axis": {
+                    "title": "Estado"
+                  }
+                },
+                "label": {
+                  "show": true
+                },
+                "color": {
+                  "fieldName": "pais",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "País"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por estado",
+                "showDescription": true,
+                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_top_cidades",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "fields": [
+                    {
+                      "name": "cidade",
+                      "expression": "`cidade`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "cidade",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Cidade",
+                  "axis": {
+                    "title": "Cidade"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Top 5 cidades por valor total negociado",
+                "showDescription": true,
+                "description": "Considera todos os pedidos do período completo. Não responde aos filtros."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "txt_sec_cliente",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Cliente e pedido"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 26,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_top_clientes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "fields": [
+                    {
+                      "name": "cliente",
+                      "expression": "`cliente`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "cliente",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Cliente",
+                  "axis": {
+                    "title": "Cliente"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 clientes por valor total negociado",
+                "showDescription": true,
+                "description": "Considera todos os pedidos do período completo. Não responde aos filtros."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_cartao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "tipo_cartao",
+                      "expression": "`tipo_cartao`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "tipo_cartao",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Tipo de cartão",
+                  "axis": {
+                    "title": "Tipo de cartão"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por tipo de cartão"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 33,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_status",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "status",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Status do pedido",
+                  "axis": {
+                    "title": "Status do pedido"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por status do pedido"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 33,
+            "width": 3,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "page_filtros",
+      "displayName": "Filtros globais",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layout": [
         {
           "widget": {
             "name": "f_periodo",
@@ -203,8 +1556,8 @@
           },
           "position": {
             "x": 0,
-            "y": 1,
-            "width": 2,
+            "y": 0,
+            "width": 1,
             "height": 1
           }
         },
@@ -293,7 +1646,7 @@
             }
           },
           "position": {
-            "x": 2,
+            "x": 0,
             "y": 1,
             "width": 1,
             "height": 1
@@ -384,8 +1737,8 @@
             }
           },
           "position": {
-            "x": 3,
-            "y": 1,
+            "x": 0,
+            "y": 2,
             "width": 1,
             "height": 1
           }
@@ -475,99 +1828,8 @@
             }
           },
           "position": {
-            "x": 4,
-            "y": 1,
-            "width": 1,
-            "height": 1
-          }
-        },
-        {
-          "widget": {
-            "name": "f_status",
-            "queries": [
-              {
-                "name": "filter_ds_vendas_status",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
-                      "name": "status_associativity",
-                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "filter_ds_pedidos_status",
-                "query": {
-                  "datasetName": "ds_pedidos",
-                  "fields": [
-                    {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
-                      "name": "status_associativity",
-                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              },
-              {
-                "name": "filter_ds_motivos_status",
-                "query": {
-                  "datasetName": "ds_motivos",
-                  "fields": [
-                    {
-                      "name": "status",
-                      "expression": "`status`"
-                    },
-                    {
-                      "name": "status_associativity",
-                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "filter-multi-select",
-              "encodings": {
-                "fields": [
-                  {
-                    "fieldName": "status",
-                    "displayName": "status",
-                    "queryName": "filter_ds_vendas_status"
-                  },
-                  {
-                    "fieldName": "status",
-                    "displayName": "status",
-                    "queryName": "filter_ds_pedidos_status"
-                  },
-                  {
-                    "fieldName": "status",
-                    "displayName": "status",
-                    "queryName": "filter_ds_motivos_status"
-                  }
-                ]
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Status do pedido"
-              }
-            }
-          },
-          "position": {
-            "x": 5,
-            "y": 1,
+            "x": 0,
+            "y": 3,
             "width": 1,
             "height": 1
           }
@@ -636,8 +1898,8 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
-            "width": 2,
+            "y": 4,
+            "width": 1,
             "height": 1
           }
         },
@@ -726,9 +1988,9 @@
             }
           },
           "position": {
-            "x": 2,
-            "y": 2,
-            "width": 2,
+            "x": 0,
+            "y": 5,
+            "width": 1,
             "height": 1
           }
         },
@@ -817,8 +2079,8 @@
             }
           },
           "position": {
-            "x": 4,
-            "y": 2,
+            "x": 0,
+            "y": 6,
             "width": 1,
             "height": 1
           }
@@ -908,1177 +2170,18 @@
             }
           },
           "position": {
-            "x": 5,
-            "y": 2,
+            "x": 0,
+            "y": 7,
             "width": 1,
             "height": 1
           }
         },
         {
           "widget": {
-            "name": "kpi_pedidos",
+            "name": "f_status",
             "queries": [
               {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "countdistinct(pedido)",
-                      "expression": "COUNT(DISTINCT `pedido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "encodings": {
-                "value": {
-                  "fieldName": "countdistinct(pedido)",
-                  "displayName": "Número de pedidos"
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Número de pedidos"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 3,
-            "width": 1,
-            "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "kpi_quantidade",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "sum(quantidade)",
-                      "expression": "SUM(`quantidade`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "encodings": {
-                "value": {
-                  "fieldName": "sum(quantidade)",
-                  "displayName": "Quantidade comprada"
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Quantidade comprada"
-              }
-            }
-          },
-          "position": {
-            "x": 1,
-            "y": 3,
-            "width": 1,
-            "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "kpi_bruto",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "encodings": {
-                "value": {
-                  "fieldName": "sum(valor_bruto)",
-                  "displayName": "Valor total negociado",
-                  "format": {
-                    "type": "number-currency",
-                    "currencyCode": "USD",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 2
-                    }
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado"
-              }
-            }
-          },
-          "position": {
-            "x": 2,
-            "y": 3,
-            "width": 2,
-            "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "kpi_liquido",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "sum(valor_liquido)",
-                      "expression": "SUM(`valor_liquido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "encodings": {
-                "value": {
-                  "fieldName": "sum(valor_liquido)",
-                  "displayName": "Valor líquido",
-                  "format": {
-                    "type": "number-currency",
-                    "currencyCode": "USD",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 2
-                    },
-                    "abbreviation": "compact"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor líquido"
-              }
-            }
-          },
-          "position": {
-            "x": 4,
-            "y": 3,
-            "width": 1,
-            "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "kpi_ticket",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_pedidos",
-                  "fields": [
-                    {
-                      "name": "avg(valor_liquido_pedido)",
-                      "expression": "AVG(`valor_liquido_pedido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 2,
-              "widgetType": "counter",
-              "encodings": {
-                "value": {
-                  "fieldName": "avg(valor_liquido_pedido)",
-                  "displayName": "Ticket médio",
-                  "format": {
-                    "type": "number-currency",
-                    "currencyCode": "USD",
-                    "decimalPlaces": {
-                      "type": "max",
-                      "places": 2
-                    }
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Ticket médio"
-              }
-            }
-          },
-          "position": {
-            "x": 5,
-            "y": 3,
-            "width": 1,
-            "height": 2
-          }
-        },
-        {
-          "widget": {
-            "name": "ln_faturamento",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "monthly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "monthly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Mês do pedido",
-                  "axis": {
-                    "title": "Mês do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por mês"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 5,
-            "width": 2,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "ln_pedidos",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "monthly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
-                    },
-                    {
-                      "name": "countdistinct(pedido)",
-                      "expression": "COUNT(DISTINCT `pedido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "monthly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Mês do pedido",
-                  "axis": {
-                    "title": "Mês do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "countdistinct(pedido)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Número de pedidos",
-                  "axis": {
-                    "title": "Número de pedidos"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Número de pedidos por mês"
-              }
-            }
-          },
-          "position": {
-            "x": 2,
-            "y": 5,
-            "width": 2,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "ln_quantidade",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "monthly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
-                    },
-                    {
-                      "name": "sum(quantidade)",
-                      "expression": "SUM(`quantidade`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "monthly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Mês do pedido",
-                  "axis": {
-                    "title": "Mês do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "sum(quantidade)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Quantidade comprada",
-                  "axis": {
-                    "title": "Quantidade comprada"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Quantidade comprada por mês"
-              }
-            }
-          },
-          "position": {
-            "x": 4,
-            "y": 5,
-            "width": 2,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "ln_ticket_mensal",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_pedidos",
-                  "fields": [
-                    {
-                      "name": "monthly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
-                    },
-                    {
-                      "name": "avg(valor_liquido_pedido)",
-                      "expression": "AVG(`valor_liquido_pedido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "monthly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Mês do pedido",
-                  "axis": {
-                    "title": "Mês do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "avg(valor_liquido_pedido)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Ticket médio (US$)",
-                  "axis": {
-                    "title": "Ticket médio (US$)"
-                  }
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Ticket médio mensal",
-                "showDescription": true,
-                "description": "Ticket médio = (valor bruto - descontos) / número de pedidos."
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 10,
-            "width": 3,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "ln_ticket_anual_pais",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_pedidos",
-                  "fields": [
-                    {
-                      "name": "yearly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"YEAR\", `data_pedido`)"
-                    },
-                    {
-                      "name": "avg(valor_liquido_pedido)",
-                      "expression": "AVG(`valor_liquido_pedido`)"
-                    },
-                    {
-                      "name": "pais",
-                      "expression": "`pais`"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "line",
-              "encodings": {
-                "x": {
-                  "fieldName": "yearly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Ano do pedido",
-                  "axis": {
-                    "title": "Ano do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "avg(valor_liquido_pedido)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Ticket médio (US$)",
-                  "axis": {
-                    "title": "Ticket médio (US$)"
-                  }
-                },
-                "color": {
-                  "fieldName": "pais",
-                  "scale": {
-                    "type": "categorical"
-                  },
-                  "displayName": "País"
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Ticket médio anual por país",
-                "showDescription": true,
-                "description": "Ticket médio = (valor bruto - descontos) / número de pedidos."
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 10,
-            "width": 3,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_top_clientes",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "cliente",
-                      "expression": "`cliente`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "cliente",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Cliente",
-                  "axis": {
-                    "title": "Cliente"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Top 10 clientes por valor total negociado",
-                "showDescription": true,
-                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 15,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_top_cidades",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "cidade",
-                      "expression": "`cidade`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "cidade",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Cidade",
-                  "axis": {
-                    "title": "Cidade"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Top 5 cidades por valor total negociado",
-                "showDescription": true,
-                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 15,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_promocao",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_promocao",
-                  "fields": [
-                    {
-                      "name": "produto",
-                      "expression": "`produto`"
-                    },
-                    {
-                      "name": "sum(quantidade)",
-                      "expression": "SUM(`quantidade`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(quantidade)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Unidades vendidas",
-                  "axis": {
-                    "title": "Unidades vendidas"
-                  }
-                },
-                "y": {
-                  "fieldName": "produto",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Produto",
-                  "axis": {
-                    "title": "Produto"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Produtos mais vendidos com o motivo de venda \"Promotion\"",
-                "showDescription": true,
-                "description": "Top 10 em unidades vendidas, considerando todos os pedidos com o motivo \"On Promotion\"."
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 21,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_produto",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "produto",
-                      "expression": "`produto`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "produto",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Produto",
-                  "axis": {
-                    "title": "Produto"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por produto",
-                "showDescription": true,
-                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 21,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_ticket_produto",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "produto",
-                      "expression": "`produto`"
-                    },
-                    {
-                      "name": "avg(valor_liquido)",
-                      "expression": "AVG(`valor_liquido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "avg(valor_liquido)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Ticket médio (US$)",
-                  "axis": {
-                    "title": "Ticket médio (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "produto",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Produto",
-                  "axis": {
-                    "title": "Produto"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Ticket médio por produto",
-                "showDescription": true,
-                "description": "Valor líquido do produto / número de pedidos que contêm o produto."
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 27,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_estado",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "estado",
-                      "expression": "`estado`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    },
-                    {
-                      "name": "pais",
-                      "expression": "`pais`"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "estado",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Estado",
-                  "axis": {
-                    "title": "Estado"
-                  }
-                },
-                "label": {
-                  "show": true
-                },
-                "color": {
-                  "fieldName": "pais",
-                  "scale": {
-                    "type": "categorical"
-                  },
-                  "displayName": "País"
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por estado",
-                "showDescription": true,
-                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 27,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_cartao",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "tipo_cartao",
-                      "expression": "`tipo_cartao`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "tipo_cartao",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Tipo de cartão",
-                  "axis": {
-                    "title": "Tipo de cartão"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por tipo de cartão"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 33,
-            "width": 3,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_motivo",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_motivos",
-                  "fields": [
-                    {
-                      "name": "motivo_venda",
-                      "expression": "`motivo_venda`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "motivo_venda",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Motivo de venda",
-                  "axis": {
-                    "title": "Motivo de venda"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por motivo de venda",
-                "showDescription": true,
-                "description": "Pedidos com mais de um motivo contam em cada um deles."
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 33,
-            "width": 3,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_pais",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "pais",
-                      "expression": "`pais`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "pais",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "País",
-                  "axis": {
-                    "title": "País"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por país"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 38,
-            "width": 3,
-            "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_status",
-            "queries": [
-              {
-                "name": "main_query",
+                "name": "filter_ds_vendas_status",
                 "query": {
                   "datasetName": "ds_vendas",
                   "fields": [
@@ -2087,8 +2190,42 @@
                       "expression": "`status`"
                     },
                     {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
+                      "name": "status_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "filter_ds_pedidos_status",
+                "query": {
+                  "datasetName": "ds_pedidos",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "status_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "filter_ds_motivos_status",
+                "query": {
+                  "datasetName": "ds_motivos",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "status_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
                     }
                   ],
                   "disaggregated": false
@@ -2096,47 +2233,38 @@
               }
             ],
             "spec": {
-              "version": 3,
-              "widgetType": "bar",
+              "version": 2,
+              "widgetType": "filter-multi-select",
               "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
+                "fields": [
+                  {
+                    "fieldName": "status",
+                    "displayName": "status",
+                    "queryName": "filter_ds_vendas_status"
                   },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "status",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
+                  {
+                    "fieldName": "status",
+                    "displayName": "status",
+                    "queryName": "filter_ds_pedidos_status"
                   },
-                  "displayName": "Status do pedido",
-                  "axis": {
-                    "title": "Status do pedido"
+                  {
+                    "fieldName": "status",
+                    "displayName": "status",
+                    "queryName": "filter_ds_motivos_status"
                   }
-                },
-                "label": {
-                  "show": true
-                }
+                ]
               },
               "frame": {
                 "showTitle": true,
-                "title": "Valor total negociado por status do pedido"
+                "title": "Status do pedido"
               }
             }
           },
           "position": {
-            "x": 3,
-            "y": 38,
-            "width": 3,
-            "height": 5
+            "x": 0,
+            "y": 8,
+            "width": 1,
+            "height": 1
           }
         }
       ]

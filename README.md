@@ -2,7 +2,7 @@
 
 Este projeto implementa um pipeline completo de Analytics Engineering utilizando dados da empresa fictícia Adventure Works. O pipeline engloba desde a extração de dados transacionais, transformação via dbt com arquitetura em camadas (Medallion / Dimensional), até a orquestração utilizando Databricks Asset Bundles (DABs).
 
-## 🏗️ Arquitetura e Stack Tecnológica
+## Arquitetura e Stack Tecnológica
 
 O projeto foi construído usando as seguintes ferramentas:
 - **PostgreSQL**: Serviu como banco de dados transacional (OLTP) de origem, simulando um ambiente produtivo.
@@ -10,7 +10,7 @@ O projeto foi construído usando as seguintes ferramentas:
 - **dbt (Data Build Tool)**: Ferramenta responsável pela modelagem, transformação e testes de qualidade de dados.
 - **Databricks Asset Bundles (DABs)**: Ferramenta de orquestração CI/CD (Infrastructure as Code) para deploy de jobs no Databricks.
 
-## 🗂️ Modelagem de Dados
+## Modelagem de Dados
 
 Optamos por uma modelagem dimensional estruturada nas seguintes camadas, respeitando as melhores práticas do dbt:
 
@@ -84,14 +84,14 @@ erDiagram
     }
 ```
 
-## ✅ Qualidade e Testes de Dados
+## Qualidade e Testes de Dados
 
 Para garantir a confiabilidade analítica, implementamos:
 - Testes genéricos (chaves primárias únicas e não nulas).
 - Relacionamentos mapeados nos arquivos `schema.yml` da camada Marts garantindo a Integridade Referencial.
 - **Auditoria de Negócio (Singular Test):** Teste contábil auditando que o valor total de vendas brutas (Gross Sales) no ano de 2011 resultou exatamente no montante validado de **$12,646,112.16**.
 
-## 🚀 Como Executar o Projeto
+## Como Executar o Projeto
 
 1. **Configuração e Ingestão:**
    Foi criado um script (`ingest_databricks.sh`) que extrai dados do PostgreSQL e envia via Databricks CLI para um Volume (`workspace.adventure_works.raw_data`). Depois, via SQL Editor do Databricks, as tabelas Delta são criadas a partir dos arquivos CSV.
@@ -108,7 +108,7 @@ Para garantir a confiabilidade analítica, implementamos:
    databricks bundle run cea_aw_dbt_job --target dev
    ```
 
-## 📊 Dashboard de Negócios
+## Dashboard de Negócios
 
 Com as tabelas consolidadas geradas pela camada Marts no schema `dev_cea_aw_marts`, o dashboard atende às necessidades dos diretores e partes interessadas, fornecendo métricas estratégicas, como:
 - Número de pedidos, quantidade comprada e valor total negociado.
@@ -117,4 +117,4 @@ Com as tabelas consolidadas geradas pela camada Marts no schema `dev_cea_aw_mart
 - Série temporal mensal de faturamento, pedidos e quantidade.
 - Produtos mais vendidos com o motivo de venda "Promotion".
 
-Todos os gráficos respondem aos filtros de período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado e país. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.
+O dashboard tem duas páginas: **Visão geral** (indicadores e séries temporais) e **Análise por dimensão** (produto e motivo de venda, localização, cliente e pedido). Os filtros são globais e valem para as duas páginas: período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado e país. A exceção são os três rankings (Top 10 clientes, Top 5 cidades e produtos do motivo "Promotion"), que são limitados na consulta e consideram sempre o período completo. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.
