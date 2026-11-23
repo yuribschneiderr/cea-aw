@@ -137,7 +137,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Painel de Vendas — Adventure Works\n",
-                "Valores em dólares (US$). **Valor total negociado** = preço unitário × quantidade. **Valor líquido** = valor negociado − descontos. Os filtros globais valem para as duas páginas, exceto o filtro de produto no ticket médio por pedido e os rankings (Top 10 clientes, Top 5 cidades e motivo \"Promotion\"), que consideram sempre o período completo."
+                "Valores em US$. **Valor total negociado** = preço unitário × quantidade · **Valor líquido** = valor negociado − descontos. Os filtros globais (à esquerda) valem para as duas páginas."
               ]
             }
           },
@@ -145,7 +145,7 @@
             "x": 0,
             "y": 0,
             "width": 6,
-            "height": 1
+            "height": 2
           }
         },
         {
@@ -191,7 +191,7 @@
           },
           "position": {
             "x": 0,
-            "y": 1,
+            "y": 2,
             "width": 1,
             "height": 2
           }
@@ -239,7 +239,7 @@
           },
           "position": {
             "x": 1,
-            "y": 1,
+            "y": 2,
             "width": 1,
             "height": 2
           }
@@ -288,7 +288,7 @@
           },
           "position": {
             "x": 2,
-            "y": 1,
+            "y": 2,
             "width": 2,
             "height": 2
           }
@@ -337,7 +337,7 @@
           },
           "position": {
             "x": 4,
-            "y": 1,
+            "y": 2,
             "width": 1,
             "height": 2
           }
@@ -386,7 +386,7 @@
           },
           "position": {
             "x": 5,
-            "y": 1,
+            "y": 2,
             "width": 1,
             "height": 2
           }
@@ -446,7 +446,7 @@
           },
           "position": {
             "x": 0,
-            "y": 3,
+            "y": 4,
             "width": 3,
             "height": 5
           }
@@ -508,7 +508,7 @@
           },
           "position": {
             "x": 3,
-            "y": 3,
+            "y": 4,
             "width": 3,
             "height": 5
           }
@@ -568,7 +568,7 @@
           },
           "position": {
             "x": 0,
-            "y": 8,
+            "y": 9,
             "width": 3,
             "height": 5
           }
@@ -628,7 +628,7 @@
           },
           "position": {
             "x": 3,
-            "y": 8,
+            "y": 9,
             "width": 3,
             "height": 5
           }
@@ -646,7 +646,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Análise por dimensão\n",
-                "Quebras por produto, motivo de venda, localização (endereço de entrega), cliente e características do pedido. Os filtros globais valem para esta página; os rankings indicam na descrição quando consideram o período completo."
+                "Produto, motivo de venda, localização (endereço de entrega), cliente e pedido. Os rankings Top 10 clientes, Top 5 cidades e \"Promotion\" consideram sempre o período completo."
               ]
             }
           },
@@ -654,7 +654,7 @@
             "x": 0,
             "y": 0,
             "width": 6,
-            "height": 1
+            "height": 2
           }
         },
         {
@@ -668,7 +668,7 @@
           },
           "position": {
             "x": 0,
-            "y": 1,
+            "y": 2,
             "width": 6,
             "height": 1
           }
@@ -736,7 +736,7 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
+            "y": 3,
             "width": 3,
             "height": 6
           }
@@ -804,7 +804,7 @@
           },
           "position": {
             "x": 3,
-            "y": 2,
+            "y": 3,
             "width": 3,
             "height": 6
           }
@@ -872,7 +872,7 @@
           },
           "position": {
             "x": 0,
-            "y": 8,
+            "y": 9,
             "width": 3,
             "height": 6
           }
@@ -940,7 +940,7 @@
           },
           "position": {
             "x": 3,
-            "y": 8,
+            "y": 9,
             "width": 3,
             "height": 6
           }
@@ -956,7 +956,7 @@
           },
           "position": {
             "x": 0,
-            "y": 14,
+            "y": 15,
             "width": 6,
             "height": 1
           }
@@ -1022,7 +1022,7 @@
           },
           "position": {
             "x": 0,
-            "y": 15,
+            "y": 16,
             "width": 3,
             "height": 5
           }
@@ -1095,7 +1095,7 @@
           },
           "position": {
             "x": 3,
-            "y": 15,
+            "y": 16,
             "width": 3,
             "height": 5
           }
@@ -1174,7 +1174,7 @@
           },
           "position": {
             "x": 0,
-            "y": 20,
+            "y": 21,
             "width": 3,
             "height": 6
           }
@@ -1242,7 +1242,7 @@
           },
           "position": {
             "x": 3,
-            "y": 20,
+            "y": 21,
             "width": 3,
             "height": 6
           }
@@ -1258,7 +1258,7 @@
           },
           "position": {
             "x": 0,
-            "y": 26,
+            "y": 27,
             "width": 6,
             "height": 1
           }
@@ -1326,7 +1326,7 @@
           },
           "position": {
             "x": 0,
-            "y": 27,
+            "y": 28,
             "width": 6,
             "height": 6
           }
@@ -1392,7 +1392,7 @@
           },
           "position": {
             "x": 0,
-            "y": 33,
+            "y": 34,
             "width": 3,
             "height": 5
           }
@@ -1458,7 +1458,7 @@
           },
           "position": {
             "x": 3,
-            "y": 33,
+            "y": 34,
             "width": 3,
             "height": 5
           }
@@ -2269,5 +2269,39 @@
         }
       ]
     }
-  ]
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#F3F5F7",
+        "dark": "#0F1419"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#18212A"
+      },
+      "widgetBorderColor": {
+        "light": "#E1E6EB",
+        "dark": "#263241"
+      },
+      "fontColor": {
+        "light": "#1B2631",
+        "dark": "#E6EDF3"
+      },
+      "selectionColor": {
+        "light": "#D97706",
+        "dark": "#F4A261"
+      },
+      "visualizationColors": [
+        "#2A9D8F",
+        "#5B8FD9",
+        "#E76F51",
+        "#9C7BD1",
+        "#E9C46A",
+        "#D45D8C",
+        "#8AB17D",
+        "#7A8B99"
+      ]
+    }
+  }
 }
