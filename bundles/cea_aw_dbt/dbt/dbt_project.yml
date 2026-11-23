@@ -2,7 +2,8 @@ name: "cea_aw"
 version: "1.0.0"
 config-version: 2
 
-# Profile de conexão definido em dbt_profiles/profiles.yml
+# Profile de conexão definido em profiles.yml, na raiz deste projeto dbt
+# (local padrão onde o dbt e a extensão do VS Code procuram o arquivo)
 profile: "cea_aw"
 
 # Caminhos dos arquivos do projeto

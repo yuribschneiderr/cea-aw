@@ -6,7 +6,7 @@ bundle:
   name: cea_aw
 
 # Targets de deployment
-# O schema e catalog padrão do dbt são definidos em dbt_profiles/profiles.yml
+# O schema e catalog padrão do dbt são definidos em dbt/profiles.yml
 targets:
   dev:
     # No "mode: development" on purpose: that mode prefixes every resource name with
@@ -41,7 +41,7 @@ resources:
         - task_key: dbt_build
           dbt_task:
             project_directory: dbt
-            profiles_directory: dbt_profiles
+            profiles_directory: dbt
             catalog: workspace
             schema: dev_cea_aw
             commands:
