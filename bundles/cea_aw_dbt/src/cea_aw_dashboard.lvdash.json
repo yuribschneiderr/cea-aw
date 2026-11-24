@@ -95,8 +95,10 @@
         "  SUM(f.quantidade) AS quantidade\n",
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
         "WHERE array_contains(split(f.motivos_venda, ', '), 'On Promotion')\n",
-        "  AND CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "  AND CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "GROUP BY p.nome_produto\n",
         "ORDER BY quantidade DESC\n",
         "LIMIT 10\n"
@@ -118,6 +120,114 @@
               }
             }
           }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
         }
       ]
     },
@@ -130,8 +240,10 @@
         "  concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')') AS cliente,\n",
         "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
         "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
-        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "GROUP BY ALL\n",
         "ORDER BY valor_bruto DESC, cliente\n",
         "LIMIT 10\n"
@@ -153,6 +265,114 @@
               }
             }
           }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
         }
       ]
     },
@@ -166,8 +386,10 @@
         "  concat(l.cidade, ' (', l.pais, ')') AS cidade,\n",
         "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
         "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
-        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "GROUP BY l.cidade, l.estado, l.pais\n",
         "ORDER BY valor_bruto DESC, cidade\n",
         "LIMIT 5\n"
@@ -189,6 +411,114 @@
               }
             }
           }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
         }
       ]
     },
@@ -202,7 +532,9 @@
         "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
-        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "GROUP BY p.nome_produto\n",
         "ORDER BY valor_bruto DESC, produto\n",
         "LIMIT 20\n"
@@ -224,6 +556,261 @@
               }
             }
           }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_top_ticket_produtos",
+      "displayName": "Top 20 produtos por ticket médio",
+      "queryLines": [
+        "-- Os 20 produtos com maior ticket médio:\n",
+        "-- (valor bruto - descontos do produto) / número de pedidos com o produto\n",
+        "SELECT\n",
+        "  p.nome_produto AS produto,\n",
+        "  SUM(f.valor_total_linha) / COUNT(DISTINCT f.fk_pedido_venda) AS ticket_medio,\n",
+        "  COUNT(DISTINCT f.fk_pedido_venda) AS pedidos\n",
+        "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
+        "GROUP BY p.nome_produto\n",
+        "ORDER BY ticket_medio DESC, produto\n",
+        "LIMIT 20\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
         }
       ]
     },
@@ -237,8 +824,10 @@
         "  l.pais,\n",
         "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
         "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
-        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "GROUP BY l.estado, l.pais\n",
         "ORDER BY valor_bruto DESC, l.estado\n",
         "LIMIT 20\n"
@@ -258,6 +847,114 @@
               "max": {
                 "value": "2014-06-30T00:00:00.000"
               }
+            }
+          }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
             }
           }
         }
@@ -300,7 +997,9 @@
         "  SELECT p.nome_produto AS produto, SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "  FROM fct_pedidos_vendas f\n",
         "  JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
-        "  WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "  JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "  JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "  WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "  GROUP BY p.nome_produto\n",
         "), acumulado AS (\n",
         "  SELECT produto, valor_bruto,\n",
@@ -343,6 +1042,114 @@
               }
             }
           }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
         }
       ]
     },
@@ -354,8 +1161,10 @@
         "WITH por_cliente AS (\n",
         "  SELECT concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')') AS cliente, SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "  FROM fct_pedidos_vendas f\n",
+        "  JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
         "  JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
-        "  WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "  JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "  WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max AND (size(:p_pais) = 0 OR array_contains(:p_pais, l.pais)) AND (size(:p_estado) = 0 OR array_contains(:p_estado, l.estado)) AND (size(:p_cidade) = 0 OR array_contains(:p_cidade, l.cidade)) AND (size(:p_produto) = 0 OR array_contains(:p_produto, p.nome_produto)) AND (size(:p_cliente) = 0 OR array_contains(:p_cliente, concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')'))) AND (size(:p_tipo_cartao) = 0 OR array_contains(:p_tipo_cartao, f.tipo_cartao)) AND (size(:p_motivos_venda) = 0 OR array_contains(:p_motivos_venda, f.motivos_venda)) AND (size(:p_status) = 0 OR array_contains(:p_status, f.descricao_status)) AND (size(:p_canal) = 0 OR array_contains(:p_canal, CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END))\n",
         "  GROUP BY ALL\n",
         "), acumulado AS (\n",
         "  SELECT cliente, valor_bruto,\n",
@@ -391,6 +1200,114 @@
               "max": {
                 "value": "2014-06-30T00:00:00.000"
               }
+            }
+          }
+        },
+        {
+          "displayName": "País",
+          "keyword": "p_pais",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Estado",
+          "keyword": "p_estado",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cidade",
+          "keyword": "p_cidade",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Produto",
+          "keyword": "p_produto",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Cliente",
+          "keyword": "p_cliente",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Tipo de cartão",
+          "keyword": "p_tipo_cartao",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Motivo de venda",
+          "keyword": "p_motivos_venda",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Status do pedido",
+          "keyword": "p_status",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
+            }
+          }
+        },
+        {
+          "displayName": "Canal de venda",
+          "keyword": "p_canal",
+          "dataType": "STRING",
+          "complexType": "MULTI",
+          "defaultSelection": {
+            "values": {
+              "dataType": "STRING",
+              "values": []
             }
           }
         }
@@ -730,7 +1647,7 @@
                 "showTitle": true,
                 "title": "Valor total negociado por mês",
                 "showDescription": true,
-                "description": "O faturamento é o número de pedidos × o ticket médio: os dois gráficos abaixo explicam esta curva."
+                "description": "O faturamento é o número de pedidos × o ticket médio: os gráficos abaixo explicam esta curva."
               }
             }
           },
@@ -797,7 +1714,67 @@
           "position": {
             "x": 0,
             "y": 10,
-            "width": 3,
+            "width": 2,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_quantidade",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "sum(quantidade)",
+                      "expression": "SUM(`quantidade`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(quantidade)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Quantidade comprada",
+                  "axis": {
+                    "title": "Quantidade comprada"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Quantidade comprada por mês"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 10,
+            "width": 2,
             "height": 5
           }
         },
@@ -857,9 +1834,9 @@
             }
           },
           "position": {
-            "x": 3,
+            "x": 4,
             "y": 10,
-            "width": 3,
+            "width": 2,
             "height": 5
           }
         },
@@ -1027,7 +2004,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Análise por dimensão\n",
-                "O que vendemos, onde e para quem. Os rankings (Top N) são recalculados para o período selecionado; os demais filtros não se aplicam a eles."
+                "O que vendemos, onde e para quem. Todos os gráficos, inclusive os rankings (Top N), respondem aos filtros globais."
               ]
             }
           },
@@ -1111,12 +2088,80 @@
                 "showTitle": true,
                 "title": "Top 20 produtos por valor total negociado",
                 "showDescription": true,
-                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
+                "description": "Ranking recalculado para a seleção: responde a todos os filtros globais."
               }
             }
           },
           "position": {
             "x": 0,
+            "y": 3,
+            "width": 3,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_top_ticket_produtos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "fields": [
+                    {
+                      "name": "produto",
+                      "expression": "`produto`"
+                    },
+                    {
+                      "name": "avg(ticket_medio)",
+                      "expression": "AVG(`ticket_medio`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(ticket_medio)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket médio (US$)",
+                  "axis": {
+                    "title": "Ticket médio (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "produto",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Produto",
+                  "axis": {
+                    "title": "Produto"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Top 20 produtos por ticket médio",
+                "showDescription": true,
+                "description": "Ticket médio do produto = (valor bruto − descontos do produto) / número de pedidos com o produto. Use os filtros de período e de localização para ver por mês, ano, cidade, estado ou país."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
             "y": 3,
             "width": 3,
             "height": 7
@@ -1179,15 +2224,15 @@
                 "showTitle": true,
                 "title": "Top 10 produtos mais vendidos com o motivo \"Promotion\"",
                 "showDescription": true,
-                "description": "Unidades vendidas nos pedidos com o motivo \"On Promotion\" no período selecionado. Responde só ao filtro de período."
+                "description": "Unidades vendidas nos pedidos com o motivo \"On Promotion\". Ranking recalculado para a seleção: responde a todos os filtros globais."
               }
             }
           },
           "position": {
-            "x": 3,
-            "y": 3,
-            "width": 3,
-            "height": 7
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 5
           }
         },
         {
@@ -1201,7 +2246,7 @@
           },
           "position": {
             "x": 0,
-            "y": 10,
+            "y": 15,
             "width": 6,
             "height": 1
           }
@@ -1267,7 +2312,7 @@
           },
           "position": {
             "x": 0,
-            "y": 11,
+            "y": 16,
             "width": 3,
             "height": 5
           }
@@ -1340,7 +2385,7 @@
           },
           "position": {
             "x": 3,
-            "y": 11,
+            "y": 16,
             "width": 3,
             "height": 5
           }
@@ -1413,13 +2458,13 @@
                 "showTitle": true,
                 "title": "Top 20 estados por valor total negociado",
                 "showDescription": true,
-                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
+                "description": "Ranking recalculado para a seleção: responde a todos os filtros globais."
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 16,
+            "y": 21,
             "width": 3,
             "height": 7
           }
@@ -1481,13 +2526,13 @@
                 "showTitle": true,
                 "title": "Top 5 cidades por valor total negociado",
                 "showDescription": true,
-                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
+                "description": "Ranking recalculado para a seleção: responde a todos os filtros globais."
               }
             }
           },
           "position": {
             "x": 3,
-            "y": 16,
+            "y": 21,
             "width": 3,
             "height": 7
           }
@@ -1503,7 +2548,7 @@
           },
           "position": {
             "x": 0,
-            "y": 23,
+            "y": 28,
             "width": 6,
             "height": 1
           }
@@ -1565,13 +2610,13 @@
                 "showTitle": true,
                 "title": "Top 10 clientes por valor total negociado",
                 "showDescription": true,
-                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
+                "description": "Ranking recalculado para a seleção: responde a todos os filtros globais."
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 24,
+            "y": 29,
             "width": 3,
             "height": 6
           }
@@ -1639,7 +2684,7 @@
           },
           "position": {
             "x": 3,
-            "y": 24,
+            "y": 29,
             "width": 3,
             "height": 6
           }
@@ -1705,7 +2750,7 @@
           },
           "position": {
             "x": 0,
-            "y": 30,
+            "y": 35,
             "width": 3,
             "height": 5
           }
@@ -1772,7 +2817,7 @@
           },
           "position": {
             "x": 3,
-            "y": 30,
+            "y": 35,
             "width": 3,
             "height": 5
           }
@@ -1790,7 +2835,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Análises avançadas\n",
-                "Concentração das vendas, efeito da promoção e papel de cada canal. As análises de concentração (Pareto) são recalculadas para o período selecionado e respondem só a esse filtro; os demais gráficos respondem a todos."
+                "Concentração das vendas, efeito da promoção e papel de cada canal. Todos os gráficos respondem aos filtros globais; o Pareto e a curva ABC são recalculados para a seleção."
               ]
             }
           },
@@ -2889,6 +3934,19 @@
                 }
               },
               {
+                "name": "param_ds_top_ticket_produtos_periodo",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
                 "name": "param_ds_top_estados_periodo",
                 "query": {
                   "datasetName": "ds_top_estados",
@@ -3019,6 +4077,10 @@
                   },
                   {
                     "parameterName": "periodo",
+                    "queryName": "param_ds_top_ticket_produtos_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
                     "queryName": "param_ds_top_estados_periodo"
                   },
                   {
@@ -3068,6 +4130,110 @@
           "widget": {
             "name": "f_pais",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_pais",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_pais",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_pais",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_pais",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_pais",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_pais",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_pais",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_pais",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_pais",
+                      "keyword": "p_pais"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_pais",
                 "query": {
@@ -3143,6 +4309,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_promocao_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_top_clientes_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_top_cidades_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_top_produtos_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_top_ticket_produtos_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_top_estados_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_pareto_produtos_p_pais"
+                  },
+                  {
+                    "parameterName": "p_pais",
+                    "queryName": "param_ds_pareto_clientes_p_pais"
+                  },
+                  {
                     "fieldName": "pais",
                     "displayName": "pais",
                     "queryName": "filter_ds_vendas_pais"
@@ -3181,6 +4379,110 @@
           "widget": {
             "name": "f_estado",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_estado",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_estado",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_estado",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_estado",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_estado",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_estado",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_estado",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_estado",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_estado",
+                      "keyword": "p_estado"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_estado",
                 "query": {
@@ -3256,6 +4558,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_promocao_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_top_clientes_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_top_cidades_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_top_produtos_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_top_ticket_produtos_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_top_estados_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_pareto_produtos_p_estado"
+                  },
+                  {
+                    "parameterName": "p_estado",
+                    "queryName": "param_ds_pareto_clientes_p_estado"
+                  },
+                  {
                     "fieldName": "estado",
                     "displayName": "estado",
                     "queryName": "filter_ds_vendas_estado"
@@ -3294,6 +4628,110 @@
           "widget": {
             "name": "f_cidade",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_cidade",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_cidade",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_cidade",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_cidade",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_cidade",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_cidade",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_cidade",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_cidade",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_cidade",
+                      "keyword": "p_cidade"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_cidade",
                 "query": {
@@ -3369,6 +4807,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_promocao_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_top_clientes_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_top_cidades_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_top_produtos_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_top_ticket_produtos_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_top_estados_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_pareto_produtos_p_cidade"
+                  },
+                  {
+                    "parameterName": "p_cidade",
+                    "queryName": "param_ds_pareto_clientes_p_cidade"
+                  },
+                  {
                     "fieldName": "cidade",
                     "displayName": "cidade",
                     "queryName": "filter_ds_vendas_cidade"
@@ -3407,6 +4877,110 @@
           "widget": {
             "name": "f_produto",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_produto",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_produto",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_produto",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_produto",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_produto",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_produto",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_produto",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_produto",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_produto",
+                      "keyword": "p_produto"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_produto",
                 "query": {
@@ -3448,6 +5022,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_promocao_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_top_clientes_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_top_cidades_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_top_produtos_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_top_ticket_produtos_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_top_estados_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_pareto_produtos_p_produto"
+                  },
+                  {
+                    "parameterName": "p_produto",
+                    "queryName": "param_ds_pareto_clientes_p_produto"
+                  },
+                  {
                     "fieldName": "produto",
                     "displayName": "produto",
                     "queryName": "filter_ds_vendas_produto"
@@ -3476,6 +5082,110 @@
           "widget": {
             "name": "f_cliente",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_cliente",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_cliente",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_cliente",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_cliente",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_cliente",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_cliente",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_cliente",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_cliente",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_cliente",
+                      "keyword": "p_cliente"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_cliente",
                 "query": {
@@ -3551,6 +5261,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_promocao_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_top_clientes_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_top_cidades_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_top_produtos_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_top_ticket_produtos_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_top_estados_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_pareto_produtos_p_cliente"
+                  },
+                  {
+                    "parameterName": "p_cliente",
+                    "queryName": "param_ds_pareto_clientes_p_cliente"
+                  },
+                  {
                     "fieldName": "cliente",
                     "displayName": "cliente",
                     "queryName": "filter_ds_vendas_cliente"
@@ -3587,8 +5329,112 @@
         },
         {
           "widget": {
-            "name": "f_cartao",
+            "name": "f_tipo_cartao",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_tipo_cartao",
+                      "keyword": "p_tipo_cartao"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_tipo_cartao",
                 "query": {
@@ -3664,6 +5510,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_promocao_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_top_clientes_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_top_cidades_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_top_produtos_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_top_ticket_produtos_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_top_estados_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_pareto_produtos_p_tipo_cartao"
+                  },
+                  {
+                    "parameterName": "p_tipo_cartao",
+                    "queryName": "param_ds_pareto_clientes_p_tipo_cartao"
+                  },
+                  {
                     "fieldName": "tipo_cartao",
                     "displayName": "tipo_cartao",
                     "queryName": "filter_ds_vendas_tipo_cartao"
@@ -3700,8 +5578,112 @@
         },
         {
           "widget": {
-            "name": "f_motivo",
+            "name": "f_motivos_venda",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_motivos_venda",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_motivos_venda",
+                      "keyword": "p_motivos_venda"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_motivos_venda",
                 "query": {
@@ -3777,6 +5759,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_promocao_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_top_clientes_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_top_cidades_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_top_produtos_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_top_ticket_produtos_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_top_estados_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_pareto_produtos_p_motivos_venda"
+                  },
+                  {
+                    "parameterName": "p_motivos_venda",
+                    "queryName": "param_ds_pareto_clientes_p_motivos_venda"
+                  },
+                  {
                     "fieldName": "motivos_venda",
                     "displayName": "motivos_venda",
                     "queryName": "filter_ds_vendas_motivos_venda"
@@ -3815,6 +5829,110 @@
           "widget": {
             "name": "f_status",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_status",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_status",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_status",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_status",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_status",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_status",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_status",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_status",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_status",
+                      "keyword": "p_status"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_status",
                 "query": {
@@ -3890,6 +6008,38 @@
               "encodings": {
                 "fields": [
                   {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_promocao_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_top_clientes_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_top_cidades_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_top_produtos_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_top_ticket_produtos_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_top_estados_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_pareto_produtos_p_status"
+                  },
+                  {
+                    "parameterName": "p_status",
+                    "queryName": "param_ds_pareto_clientes_p_status"
+                  },
+                  {
                     "fieldName": "status",
                     "displayName": "status",
                     "queryName": "filter_ds_vendas_status"
@@ -3928,6 +6078,110 @@
           "widget": {
             "name": "f_canal",
             "queries": [
+              {
+                "name": "param_ds_promocao_p_canal",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_p_canal",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_p_canal",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_p_canal",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_ticket_produtos_p_canal",
+                "query": {
+                  "datasetName": "ds_top_ticket_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_p_canal",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_p_canal",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_p_canal",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "p_canal",
+                      "keyword": "p_canal"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_canal",
                 "query": {
@@ -4002,6 +6256,38 @@
               "widgetType": "filter-multi-select",
               "encodings": {
                 "fields": [
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_promocao_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_top_clientes_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_top_cidades_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_top_produtos_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_top_ticket_produtos_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_top_estados_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_pareto_produtos_p_canal"
+                  },
+                  {
+                    "parameterName": "p_canal",
+                    "queryName": "param_ds_pareto_clientes_p_canal"
+                  },
                   {
                     "fieldName": "canal",
                     "displayName": "canal",
