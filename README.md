@@ -108,13 +108,27 @@ Para garantir a confiabilidade analítica, implementamos:
    databricks bundle run cea_aw_dbt_job --target dev
    ```
 
+## Análise Exploratória (EDA)
+
+O notebook `bundles/cea_aw_dbt/src/eda_adventure_works.py` (formato de notebook Databricks) é enviado ao workspace pelo `databricks bundle deploy` e roda em serverless com *Run all*. Ele só lê dados (`workspace.adventure_works` e `workspace.dev_cea_aw_marts`) e usa as mesmas definições de indicadores do dashboard. Cada gráfico ou tabela vem seguido de um comentário com o insight:
+- **Qualidade dos dados:** chaves íntegras, pedidos sem cartão (N/A), pedidos sem motivo de venda (Nenhum), status único e o motivo de a localização vir do endereço de entrega.
+- **Auditoria:** reproduz o valor de 2011 (US$ 12.646.112,16) e mostra por que o preço precisa de 4 casas decimais.
+- **Tempo:** evolução mensal por canal, comparação entre períodos equivalentes (2014 está incompleto), o ciclo mensal de pedidos da revenda e as trocas de catálogo de bicicletas no online.
+- **Canais, produtos, locais e clientes:** efeito de mix no ticket médio, Pareto e curva ABC de produtos e clientes, recorrência de clientes e o efeito real do motivo "Promotion".
+- **Conclusões:** decisões de modelagem que vieram da análise e recomendações para o negócio.
+
+## Regras de Negócio
+
+O documento [`docs/regras_de_negocio.md`](docs/regras_de_negocio.md) reúne as perguntas de negócio, a definição de cada indicador (pedidos, valor total negociado, valor líquido, ticket médio, Pareto e curva ABC), as regras de tratamento dos dados (localização pelo endereço de entrega, cartão N/A, motivo "Nenhum", precisão do preço) e os valores de referência usados para conferir o painel, o notebook e os testes do dbt.
+
 ## Dashboard de Negócios
 
 Com as tabelas consolidadas geradas pela camada Marts no schema `dev_cea_aw_marts`, o dashboard atende às necessidades dos diretores e partes interessadas, fornecendo métricas estratégicas, como:
 - Número de pedidos, quantidade comprada e valor total negociado.
 - Análise de tickets médios (mensal, mensal por canal e anual por país).
 - Top 20 produtos, Top 20 estados, Top 10 clientes e Top 5 cidades com mais faturamento.
-- Série temporal mensal de faturamento e pedidos.
+- Top 20 produtos por ticket médio (por mês, ano e localização, por meio dos filtros).
+- Série temporal mensal de faturamento, pedidos e quantidade comprada.
 - Produtos mais vendidos com o motivo de venda "Promotion".
 
-O dashboard foi organizado como uma narrativa: cada página responde a uma pergunta e cada seção a uma pergunta menor. **Visão geral** (como está o negócio: indicadores, evolução mensal do faturamento explicada por pedidos × ticket médio, participação por canal e categoria), **Análise por dimensão** (o que, onde e para quem vendemos: produtos, localização, clientes, motivo de venda, tipo de cartão e status) e **Análises avançadas** (por quê: Pareto de produtos e de clientes em barras + linha acumulada, curva ABC de produtos, efeito do motivo "Promotion" e dos descontos, papel de cada canal e recorrência de clientes). Os filtros são globais e valem para todas as páginas: período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado, país e canal de venda. A exceção são os rankings (Top 20 produtos, Top 20 estados, Top 10 clientes, Top 5 cidades e produtos do motivo "Promotion") e as curvas de Pareto, que são calculados na própria consulta SQL: eles são recalculados para o período selecionado (por meio de um parâmetro de data aplicado antes do agrupamento) e respondem apenas ao filtro de período. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.
+O dashboard foi organizado como uma narrativa: cada página responde a uma pergunta e cada seção a uma pergunta menor. **Visão geral** (como está o negócio: indicadores, evolução mensal do faturamento explicada por pedidos × ticket médio, participação por canal e categoria), **Análise por dimensão** (o que, onde e para quem vendemos: produtos, localização, clientes, motivo de venda, tipo de cartão e status) e **Análises avançadas** (por quê: Pareto de produtos e de clientes em barras + linha acumulada, curva ABC de produtos, efeito do motivo "Promotion" e dos descontos, papel de cada canal e recorrência de clientes). Os filtros são globais e valem para todas as páginas: período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado, país e canal de venda. Todos os gráficos respondem a todos os filtros. Os rankings (Top 20 produtos, Top 20 produtos por ticket médio, Top 20 estados, Top 10 clientes, Top 5 cidades e produtos do motivo "Promotion") e as curvas de Pareto são calculados na própria consulta SQL (agrupamento + limite), então cada filtro chega neles como um parâmetro da consulta, aplicado antes do agrupamento: o ranking é recalculado para a seleção, e não apenas recortado. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.

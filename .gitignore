@@ -40,3 +40,5 @@ CLAUDE.md
 
 # Setup / Steps scripts
 .steps/
+# Submission files (PDF/JPEG exports and link files for the Zip)
+entrega/
