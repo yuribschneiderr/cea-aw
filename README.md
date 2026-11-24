@@ -112,9 +112,9 @@ Para garantir a confiabilidade analítica, implementamos:
 
 Com as tabelas consolidadas geradas pela camada Marts no schema `dev_cea_aw_marts`, o dashboard atende às necessidades dos diretores e partes interessadas, fornecendo métricas estratégicas, como:
 - Número de pedidos, quantidade comprada e valor total negociado.
-- Análise de tickets médios (mensal, anual por país e por produto).
-- Top 10 Clientes e Top 5 Cidades com mais faturamento.
-- Série temporal mensal de faturamento, pedidos e quantidade.
+- Análise de tickets médios (mensal, mensal por canal e anual por país).
+- Top 20 produtos, Top 20 estados, Top 10 clientes e Top 5 cidades com mais faturamento.
+- Série temporal mensal de faturamento e pedidos.
 - Produtos mais vendidos com o motivo de venda "Promotion".
 
-O dashboard tem duas páginas: **Visão geral** (indicadores e séries temporais) e **Análise por dimensão** (produto e motivo de venda, localização, cliente e pedido). Os filtros são globais e valem para as duas páginas: período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado e país. A exceção são os três rankings (Top 10 clientes, Top 5 cidades e produtos do motivo "Promotion"), que são limitados na consulta e consideram sempre o período completo. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.
+O dashboard foi organizado como uma narrativa: cada página responde a uma pergunta e cada seção a uma pergunta menor. **Visão geral** (como está o negócio: indicadores, evolução mensal do faturamento explicada por pedidos × ticket médio, participação por canal e categoria), **Análise por dimensão** (o que, onde e para quem vendemos: produtos, localização, clientes, motivo de venda, tipo de cartão e status) e **Análises avançadas** (por quê: Pareto de produtos e de clientes em barras + linha acumulada, curva ABC de produtos, efeito do motivo "Promotion" e dos descontos, papel de cada canal e recorrência de clientes). Os filtros são globais e valem para todas as páginas: período, produto, cliente, tipo de cartão, motivo de venda, status, cidade, estado, país e canal de venda. A exceção são os rankings (Top 20 produtos, Top 20 estados, Top 10 clientes, Top 5 cidades e produtos do motivo "Promotion") e as curvas de Pareto, que são calculados na própria consulta SQL: eles são recalculados para o período selecionado (por meio de um parâmetro de data aplicado antes do agrupamento) e respondem apenas ao filtro de período. A definição do dashboard é versionada em `bundles/cea_aw_dbt/src/cea_aw_dashboard.lvdash.json` e publicada pelo `databricks bundle deploy`.
