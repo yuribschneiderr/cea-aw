@@ -17,6 +17,11 @@
         "  l.cidade,\n",
         "  l.estado,\n",
         "  l.pais,\n",
+        "  CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END AS canal,\n",
+        "  -- Primeira compra = pedido feito na data do primeiro pedido do cliente (histórico completo)\n",
+        "  CASE WHEN f.data_pedido = MIN(f.data_pedido) OVER (PARTITION BY f.fk_cliente)\n",
+        "    THEN 'Primeira compra' ELSE 'Recompra' END AS tipo_compra,\n",
+        "  o.descricao_oferta AS oferta_especial,\n",
         "  f.quantidade,\n",
         "  f.valor_bruto_linha AS valor_bruto,\n",
         "  f.valor_desconto_linha AS valor_desconto,\n",
@@ -24,7 +29,8 @@
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
         "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
-        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n"
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "JOIN dim_ofertas_especiais o ON f.fk_oferta_especial = o.pk_oferta_especial\n"
       ]
     },
     {
@@ -43,6 +49,7 @@
         "  l.cidade,\n",
         "  l.estado,\n",
         "  l.pais,\n",
+        "  CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END AS canal,\n",
         "  SUM(f.valor_total_linha) AS valor_liquido_pedido\n",
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
@@ -68,6 +75,7 @@
         "  l.cidade,\n",
         "  l.estado,\n",
         "  l.pais,\n",
+        "  CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END AS canal,\n",
         "  f.quantidade,\n",
         "  f.valor_bruto_linha AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
@@ -88,9 +96,29 @@
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
         "WHERE array_contains(split(f.motivos_venda, ', '), 'On Promotion')\n",
+        "  AND CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
         "GROUP BY p.nome_produto\n",
         "ORDER BY quantidade DESC\n",
         "LIMIT 10\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
       ]
     },
     {
@@ -103,9 +131,29 @@
         "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
         "GROUP BY ALL\n",
         "ORDER BY valor_bruto DESC, cliente\n",
         "LIMIT 10\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
       ]
     },
     {
@@ -119,9 +167,233 @@
         "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
         "FROM fct_pedidos_vendas f\n",
         "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
         "GROUP BY l.cidade, l.estado, l.pais\n",
         "ORDER BY valor_bruto DESC, cidade\n",
         "LIMIT 5\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_top_produtos",
+      "displayName": "Top 20 produtos",
+      "queryLines": [
+        "-- Os 20 produtos com maior valor total negociado (preço unitário x quantidade)\n",
+        "SELECT\n",
+        "  p.nome_produto AS produto,\n",
+        "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
+        "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "GROUP BY p.nome_produto\n",
+        "ORDER BY valor_bruto DESC, produto\n",
+        "LIMIT 20\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_top_estados",
+      "displayName": "Top 20 estados",
+      "queryLines": [
+        "-- Os 20 estados (endereço de entrega) com maior valor total negociado\n",
+        "SELECT\n",
+        "  l.estado,\n",
+        "  l.pais,\n",
+        "  SUM(f.valor_bruto_linha) AS valor_bruto\n",
+        "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "GROUP BY l.estado, l.pais\n",
+        "ORDER BY valor_bruto DESC, l.estado\n",
+        "LIMIT 20\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_pedidos_online",
+      "displayName": "Pedidos online (motivo Promotion)",
+      "queryLines": [
+        "-- Grão: pedido online. Compara pedidos com e sem o motivo de venda 'On Promotion'\n",
+        "SELECT\n",
+        "  f.fk_pedido_venda AS pedido,\n",
+        "  CAST(f.data_pedido AS DATE) AS data_pedido,\n",
+        "  concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')') AS cliente,\n",
+        "  f.tipo_cartao,\n",
+        "  f.motivos_venda,\n",
+        "  f.descricao_status AS status,\n",
+        "  l.cidade,\n",
+        "  l.estado,\n",
+        "  l.pais,\n",
+        "  CASE WHEN f.flag_pedido_online THEN 'Online' ELSE 'Revenda (lojas)' END AS canal,\n",
+        "  CASE WHEN array_contains(split(f.motivos_venda, ', '), 'On Promotion')\n",
+        "    THEN 'Com motivo Promotion' ELSE 'Sem motivo Promotion' END AS grupo_promocao,\n",
+        "  SUM(f.quantidade) AS quantidade_pedido,\n",
+        "  SUM(f.valor_total_linha) AS valor_liquido_pedido\n",
+        "FROM fct_pedidos_vendas f\n",
+        "JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "JOIN dim_localidades l ON f.fk_localidade = l.pk_localidade\n",
+        "WHERE f.flag_pedido_online\n",
+        "GROUP BY ALL\n"
+      ]
+    },
+    {
+      "name": "ds_pareto_produtos",
+      "displayName": "Pareto de produtos (curva ABC)",
+      "queryLines": [
+        "-- Pareto de produtos: uma linha por produto, ordenada pelo valor total negociado.\n",
+        "-- Curva ABC: A = até 80% do valor acumulado, B = até 95%, C = restante\n",
+        "WITH por_produto AS (\n",
+        "  SELECT p.nome_produto AS produto, SUM(f.valor_bruto_linha) AS valor_bruto\n",
+        "  FROM fct_pedidos_vendas f\n",
+        "  JOIN dim_produtos p ON f.fk_produto = p.pk_produto\n",
+        "  WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "  GROUP BY p.nome_produto\n",
+        "), acumulado AS (\n",
+        "  SELECT produto, valor_bruto,\n",
+        "    ROW_NUMBER() OVER (ORDER BY valor_bruto DESC, produto) AS posicao,\n",
+        "    SUM(valor_bruto) OVER (ORDER BY valor_bruto DESC, produto\n",
+        "      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / SUM(valor_bruto) OVER () AS pct_acumulado,\n",
+        "    NTILE(10) OVER (ORDER BY valor_bruto DESC, produto) AS decil\n",
+        "  FROM por_produto\n",
+        "), classificado AS (\n",
+        "  SELECT *, CASE WHEN pct_acumulado <= 0.8 THEN 'A' WHEN pct_acumulado <= 0.95 THEN 'B' ELSE 'C' END AS classe\n",
+        "  FROM acumulado\n",
+        ")\n",
+        "SELECT\n",
+        "  -- Posição no ranking (1 = maior valor): eixo X numérico da curva de Pareto\n",
+        "  CAST(posicao AS INT) AS posicao,\n",
+        "  produto,\n",
+        "  valor_bruto,\n",
+        "  CAST(pct_acumulado * 100 AS DOUBLE) AS pct_acumulado,\n",
+        "  CAST(valor_bruto / SUM(valor_bruto) OVER () * 100 AS DOUBLE) AS participacao_pct,\n",
+        "  CASE WHEN classe = 'A' THEN 1 ELSE 0 END AS flag_classe_a,\n",
+        "  concat('Classe ', classe, ' (', COUNT(*) OVER (PARTITION BY classe), ' produtos)') AS classe_abc,\n",
+        "  -- Faixa (decil) de produtos; o número na frente mantém a ordem alfabética igual à do ranking\n",
+        "  concat(lpad(CAST(decil AS STRING), 2, '0'), ' · ', CASE WHEN decil = 1 THEN 'top 10%' ELSE concat((decil - 1) * 10, '-', decil * 10, '%') END) AS faixa_produtos\n",
+        "FROM classificado\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ds_pareto_clientes",
+      "displayName": "Concentração de clientes",
+      "queryLines": [
+        "-- Concentração de clientes: uma linha por cliente, com a faixa (decil) pelo valor negociado\n",
+        "WITH por_cliente AS (\n",
+        "  SELECT concat(coalesce(c.nome_cliente, 'Sem nome'), ' (', f.fk_cliente, ')') AS cliente, SUM(f.valor_bruto_linha) AS valor_bruto\n",
+        "  FROM fct_pedidos_vendas f\n",
+        "  JOIN dim_clientes c ON f.fk_cliente = c.pk_cliente\n",
+        "  WHERE CAST(f.data_pedido AS DATE) BETWEEN :periodo.min AND :periodo.max\n",
+        "  GROUP BY ALL\n",
+        "), acumulado AS (\n",
+        "  SELECT cliente, valor_bruto,\n",
+        "    SUM(valor_bruto) OVER (ORDER BY valor_bruto DESC, cliente\n",
+        "      ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) / SUM(valor_bruto) OVER () AS pct_acumulado,\n",
+        "    NTILE(10) OVER (ORDER BY valor_bruto DESC, cliente) AS decil\n",
+        "  FROM por_cliente\n",
+        "), classificado AS (\n",
+        "  SELECT *, CASE WHEN pct_acumulado <= 0.8 THEN 1 ELSE 0 END AS flag_classe_a\n",
+        "  FROM acumulado\n",
+        ")\n",
+        "SELECT\n",
+        "  cliente,\n",
+        "  valor_bruto,\n",
+        "  CAST(pct_acumulado * 100 AS DOUBLE) AS pct_acumulado,\n",
+        "  CAST(valor_bruto / SUM(valor_bruto) OVER () * 100 AS DOUBLE) AS participacao_pct,\n",
+        "  flag_classe_a,\n",
+        "  concat(lpad(CAST(decil AS STRING), 2, '0'), ' · ', CASE WHEN decil = 1 THEN 'top 10%' ELSE concat((decil - 1) * 10, '-', decil * 10, '%') END) AS faixa_clientes\n",
+        "FROM classificado\n"
+      ],
+      "parameters": [
+        {
+          "displayName": "Período do pedido",
+          "keyword": "periodo",
+          "dataType": "DATE",
+          "complexType": "RANGE",
+          "defaultSelection": {
+            "range": {
+              "dataType": "DATE",
+              "min": {
+                "value": "2011-05-31T00:00:00.000"
+              },
+              "max": {
+                "value": "2014-06-30T00:00:00.000"
+              }
+            }
+          }
+        }
       ]
     }
   ],
@@ -137,7 +409,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Painel de Vendas — Adventure Works\n",
-                "Valores em US$. **Valor total negociado** = preço unitário × quantidade · **Valor líquido** = valor negociado − descontos. Os filtros globais (à esquerda) valem para as duas páginas."
+                "Valores em US$. **Valor total negociado** = preço unitário × quantidade · **Valor líquido** = valor negociado − descontos. Os filtros globais (à esquerda) valem para todas as páginas."
               ]
             }
           },
@@ -393,6 +665,22 @@
         },
         {
           "widget": {
+            "name": "txt_sec_evolucao",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Como as vendas evoluíram?"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
             "name": "ln_faturamento",
             "queries": [
               {
@@ -440,13 +728,75 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Valor total negociado por mês"
+                "title": "Valor total negociado por mês",
+                "showDescription": true,
+                "description": "O faturamento é o número de pedidos × o ticket médio: os dois gráficos abaixo explicam esta curva."
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 4,
+            "y": 5,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_pedidos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "countdistinct(pedido)",
+                      "expression": "COUNT(DISTINCT `pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "countdistinct(pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Número de pedidos",
+                  "axis": {
+                    "title": "Número de pedidos"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Número de pedidos por mês"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
             "width": 3,
             "height": 5
           }
@@ -508,14 +858,30 @@
           },
           "position": {
             "x": 3,
-            "y": 4,
+            "y": 10,
             "width": 3,
             "height": 5
           }
         },
         {
           "widget": {
-            "name": "ln_pedidos",
+            "name": "txt_sec_composicao",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## De onde vem o faturamento?"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "pie_canal",
             "queries": [
               {
                 "name": "main_query",
@@ -523,12 +889,12 @@
                   "datasetName": "ds_vendas",
                   "fields": [
                     {
-                      "name": "monthly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                      "name": "canal",
+                      "expression": "`canal`"
                     },
                     {
-                      "name": "countdistinct(pedido)",
-                      "expression": "COUNT(DISTINCT `pedido`)"
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
                     }
                   ],
                   "disaggregated": false
@@ -537,45 +903,54 @@
             ],
             "spec": {
               "version": 3,
-              "widgetType": "line",
+              "widgetType": "pie",
+              "data": {
+                "queryName": "main_query"
+              },
               "encodings": {
-                "x": {
-                  "fieldName": "monthly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Mês do pedido",
-                  "axis": {
-                    "title": "Mês do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "countdistinct(pedido)",
+                "angle": {
+                  "fieldName": "sum(valor_bruto)",
                   "scale": {
                     "type": "quantitative"
                   },
-                  "displayName": "Número de pedidos",
-                  "axis": {
-                    "title": "Número de pedidos"
+                  "displayName": "Valor total negociado (US$)"
+                },
+                "color": {
+                  "fieldName": "canal",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "angle-reversed"
+                    }
+                  },
+                  "displayName": "Canal"
+                },
+                "label": {
+                  "show": true,
+                  "text": {
+                    "fieldName": "sum(valor_bruto)",
+                    "displayName": "Valor total negociado (US$)"
                   }
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Número de pedidos por mês"
+                "title": "Valor total negociado por canal",
+                "showDescription": true,
+                "description": "Online = clientes pessoa física. Revenda = lojas (pedidos feitos por representantes de venda)."
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 9,
+            "y": 16,
             "width": 3,
             "height": 5
           }
         },
         {
           "widget": {
-            "name": "ln_quantidade",
+            "name": "bar_categoria",
             "queries": [
               {
                 "name": "main_query",
@@ -583,12 +958,12 @@
                   "datasetName": "ds_vendas",
                   "fields": [
                     {
-                      "name": "monthly(data_pedido)",
-                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                      "name": "categoria",
+                      "expression": "`categoria`"
                     },
                     {
-                      "name": "sum(quantidade)",
-                      "expression": "SUM(`quantidade`)"
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
                     }
                   ],
                   "disaggregated": false
@@ -597,38 +972,44 @@
             ],
             "spec": {
               "version": 3,
-              "widgetType": "line",
+              "widgetType": "bar",
               "encodings": {
                 "x": {
-                  "fieldName": "monthly(data_pedido)",
-                  "scale": {
-                    "type": "temporal"
-                  },
-                  "displayName": "Mês do pedido",
-                  "axis": {
-                    "title": "Mês do pedido"
-                  }
-                },
-                "y": {
-                  "fieldName": "sum(quantidade)",
+                  "fieldName": "sum(valor_bruto)",
                   "scale": {
                     "type": "quantitative"
                   },
-                  "displayName": "Quantidade comprada",
+                  "displayName": "Valor total negociado (US$)",
                   "axis": {
-                    "title": "Quantidade comprada"
+                    "title": "Valor total negociado (US$)"
                   }
+                },
+                "y": {
+                  "fieldName": "categoria",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Categoria",
+                  "axis": {
+                    "title": "Categoria"
+                  }
+                },
+                "label": {
+                  "show": true
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Quantidade comprada por mês"
+                "title": "Valor total negociado por categoria"
               }
             }
           },
           "position": {
             "x": 3,
-            "y": 9,
+            "y": 16,
             "width": 3,
             "height": 5
           }
@@ -646,7 +1027,7 @@
             "multilineTextboxSpec": {
               "lines": [
                 "# Análise por dimensão\n",
-                "Produto, motivo de venda, localização (endereço de entrega), cliente e pedido. Os rankings Top 10 clientes, Top 5 cidades e \"Promotion\" consideram sempre o período completo."
+                "O que vendemos, onde e para quem. Os rankings (Top N) são recalculados para o período selecionado; os demais filtros não se aplicam a eles."
               ]
             }
           },
@@ -662,7 +1043,7 @@
             "name": "txt_sec_produto",
             "multilineTextboxSpec": {
               "lines": [
-                "## Produto e motivo de venda"
+                "## O que vendemos?"
               ]
             }
           },
@@ -675,12 +1056,12 @@
         },
         {
           "widget": {
-            "name": "bar_produto",
+            "name": "bar_top_produtos",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_vendas",
+                  "datasetName": "ds_top_produtos",
                   "fields": [
                     {
                       "name": "produto",
@@ -728,9 +1109,9 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Valor total negociado por produto",
+                "title": "Top 20 produtos por valor total negociado",
                 "showDescription": true,
-                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
+                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
               }
             }
           },
@@ -738,75 +1119,7 @@
             "x": 0,
             "y": 3,
             "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_ticket_produto",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_vendas",
-                  "fields": [
-                    {
-                      "name": "produto",
-                      "expression": "`produto`"
-                    },
-                    {
-                      "name": "avg(valor_liquido)",
-                      "expression": "AVG(`valor_liquido`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "avg(valor_liquido)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Ticket médio (US$)",
-                  "axis": {
-                    "title": "Ticket médio (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "produto",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Produto",
-                  "axis": {
-                    "title": "Produto"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Ticket médio por produto",
-                "showDescription": true,
-                "description": "Valor líquido do produto / número de pedidos que contêm o produto."
-              }
-            }
-          },
-          "position": {
-            "x": 3,
-            "y": 3,
-            "width": 3,
-            "height": 6
+            "height": 7
           }
         },
         {
@@ -864,85 +1177,17 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Produtos mais vendidos com o motivo de venda \"Promotion\"",
+                "title": "Top 10 produtos mais vendidos com o motivo \"Promotion\"",
                 "showDescription": true,
-                "description": "Top 10 em unidades vendidas, considerando todos os pedidos com o motivo \"On Promotion\"."
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 9,
-            "width": 3,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
-            "name": "bar_motivo",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_motivos",
-                  "fields": [
-                    {
-                      "name": "motivo_venda",
-                      "expression": "`motivo_venda`"
-                    },
-                    {
-                      "name": "sum(valor_bruto)",
-                      "expression": "SUM(`valor_bruto`)"
-                    }
-                  ],
-                  "disaggregated": false
-                }
-              }
-            ],
-            "spec": {
-              "version": 3,
-              "widgetType": "bar",
-              "encodings": {
-                "x": {
-                  "fieldName": "sum(valor_bruto)",
-                  "scale": {
-                    "type": "quantitative"
-                  },
-                  "displayName": "Valor total negociado (US$)",
-                  "axis": {
-                    "title": "Valor total negociado (US$)"
-                  }
-                },
-                "y": {
-                  "fieldName": "motivo_venda",
-                  "scale": {
-                    "type": "categorical",
-                    "sort": {
-                      "by": "x-reversed"
-                    }
-                  },
-                  "displayName": "Motivo de venda",
-                  "axis": {
-                    "title": "Motivo de venda"
-                  }
-                },
-                "label": {
-                  "show": true
-                }
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Valor total negociado por motivo de venda",
-                "showDescription": true,
-                "description": "Pedidos com mais de um motivo contam em cada um deles."
+                "description": "Unidades vendidas nos pedidos com o motivo \"On Promotion\" no período selecionado. Responde só ao filtro de período."
               }
             }
           },
           "position": {
             "x": 3,
-            "y": 9,
+            "y": 3,
             "width": 3,
-            "height": 6
+            "height": 7
           }
         },
         {
@@ -950,13 +1195,13 @@
             "name": "txt_sec_local",
             "multilineTextboxSpec": {
               "lines": [
-                "## Localização"
+                "## Onde vendemos? (endereço de entrega)"
               ]
             }
           },
           "position": {
             "x": 0,
-            "y": 15,
+            "y": 10,
             "width": 6,
             "height": 1
           }
@@ -1022,7 +1267,7 @@
           },
           "position": {
             "x": 0,
-            "y": 16,
+            "y": 11,
             "width": 3,
             "height": 5
           }
@@ -1095,19 +1340,19 @@
           },
           "position": {
             "x": 3,
-            "y": 16,
+            "y": 11,
             "width": 3,
             "height": 5
           }
         },
         {
           "widget": {
-            "name": "bar_estado",
+            "name": "bar_top_estados",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_vendas",
+                  "datasetName": "ds_top_estados",
                   "fields": [
                     {
                       "name": "estado",
@@ -1166,17 +1411,17 @@
               },
               "frame": {
                 "showTitle": true,
-                "title": "Valor total negociado por estado",
+                "title": "Top 20 estados por valor total negociado",
                 "showDescription": true,
-                "description": "Ordenado do maior para o menor valor. Responde a todos os filtros."
+                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 21,
+            "y": 16,
             "width": 3,
-            "height": 6
+            "height": 7
           }
         },
         {
@@ -1236,15 +1481,15 @@
                 "showTitle": true,
                 "title": "Top 5 cidades por valor total negociado",
                 "showDescription": true,
-                "description": "Considera todos os pedidos do período completo. Não responde aos filtros."
+                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
               }
             }
           },
           "position": {
             "x": 3,
-            "y": 21,
+            "y": 16,
             "width": 3,
-            "height": 6
+            "height": 7
           }
         },
         {
@@ -1252,13 +1497,13 @@
             "name": "txt_sec_cliente",
             "multilineTextboxSpec": {
               "lines": [
-                "## Cliente e pedido"
+                "## Para quem e como vendemos?"
               ]
             }
           },
           "position": {
             "x": 0,
-            "y": 27,
+            "y": 23,
             "width": 6,
             "height": 1
           }
@@ -1320,14 +1565,82 @@
                 "showTitle": true,
                 "title": "Top 10 clientes por valor total negociado",
                 "showDescription": true,
-                "description": "Considera todos os pedidos do período completo. Não responde aos filtros."
+                "description": "Ranking calculado dentro do período selecionado. Responde só ao filtro de período."
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 28,
-            "width": 6,
+            "y": 24,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_motivo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_motivos",
+                  "fields": [
+                    {
+                      "name": "motivo_venda",
+                      "expression": "`motivo_venda`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "motivo_venda",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Motivo de venda",
+                  "axis": {
+                    "title": "Motivo de venda"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por motivo de venda",
+                "showDescription": true,
+                "description": "Pedidos com mais de um motivo contam em cada um deles."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 24,
+            "width": 3,
             "height": 6
           }
         },
@@ -1392,14 +1705,14 @@
           },
           "position": {
             "x": 0,
-            "y": 34,
+            "y": 30,
             "width": 3,
             "height": 5
           }
         },
         {
           "widget": {
-            "name": "bar_status",
+            "name": "pie_status",
             "queries": [
               {
                 "name": "main_query",
@@ -1421,6 +1734,1048 @@
             ],
             "spec": {
               "version": 3,
+              "widgetType": "pie",
+              "data": {
+                "queryName": "main_query"
+              },
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)"
+                },
+                "color": {
+                  "fieldName": "status",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "angle-reversed"
+                    }
+                  },
+                  "displayName": "Status do pedido"
+                },
+                "label": {
+                  "show": true,
+                  "text": {
+                    "fieldName": "sum(valor_bruto)",
+                    "displayName": "Valor total negociado (US$)"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por status do pedido"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 30,
+            "width": 3,
+            "height": 5
+          }
+        }
+      ]
+    },
+    {
+      "name": "page_analises",
+      "displayName": "Análises avançadas",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "txt_analises",
+            "multilineTextboxSpec": {
+              "lines": [
+                "# Análises avançadas\n",
+                "Concentração das vendas, efeito da promoção e papel de cada canal. As análises de concentração (Pareto) são recalculadas para o período selecionado e respondem só a esse filtro; os demais gráficos respondem a todos."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "txt_sec_pareto",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Quão concentradas são as vendas?"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_produtos_a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "fields": [
+                    {
+                      "name": "sum(flag_classe_a)",
+                      "expression": "SUM(`flag_classe_a`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(flag_classe_a)",
+                  "displayName": "Produtos que geram 80% do valor negociado",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 0
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Produtos que geram 80% do valor negociado"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_clientes_a",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "fields": [
+                    {
+                      "name": "sum(flag_classe_a)",
+                      "expression": "SUM(`flag_classe_a`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "sum(flag_classe_a)",
+                  "displayName": "Clientes que geram 80% do valor negociado",
+                  "format": {
+                    "type": "number-plain",
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 0
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Clientes que geram 80% do valor negociado"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_clientes_a_pct",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "fields": [
+                    {
+                      "name": "avg(flag_classe_a)",
+                      "expression": "AVG(`flag_classe_a`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(flag_classe_a)",
+                  "displayName": "% da base de clientes que gera 80% do valor",
+                  "format": {
+                    "type": "number-percent",
+                    "decimalPlaces": {
+                      "type": "exact",
+                      "places": 1
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "% da base de clientes que gera 80% do valor"
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "cb_pareto_produtos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "fields": [
+                    {
+                      "name": "faixa_produtos",
+                      "expression": "`faixa_produtos`"
+                    },
+                    {
+                      "name": "sum(participacao_pct)",
+                      "expression": "SUM(`participacao_pct`)"
+                    },
+                    {
+                      "name": "max(pct_acumulado)",
+                      "expression": "MAX(`pct_acumulado`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "faixa_produtos",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Faixa de produtos (10% cada)",
+                  "axis": {
+                    "title": "Faixa de produtos (10% cada)"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(participacao_pct)",
+                        "displayName": "% do valor na faixa"
+                      }
+                    ]
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "max(pct_acumulado)",
+                        "displayName": "% acumulado"
+                      }
+                    ]
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pareto de produtos",
+                "showDescription": true,
+                "description": "Produtos do maior para o menor valor, em 10 faixas de mesmo tamanho. Barra = % do valor negociado na faixa; linha = % acumulado até a faixa."
+              },
+              "annotations": [
+                {
+                  "type": "horizontal-line",
+                  "encodings": {
+                    "y": {
+                      "dataValue": "80",
+                      "dataType": "INTEGER"
+                    },
+                    "label": {
+                      "value": "80% do valor"
+                    },
+                    "color": {
+                      "value": "#E76F51"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "cb_pareto_clientes",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "fields": [
+                    {
+                      "name": "faixa_clientes",
+                      "expression": "`faixa_clientes`"
+                    },
+                    {
+                      "name": "sum(participacao_pct)",
+                      "expression": "SUM(`participacao_pct`)"
+                    },
+                    {
+                      "name": "max(pct_acumulado)",
+                      "expression": "MAX(`pct_acumulado`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "combo",
+              "encodings": {
+                "x": {
+                  "fieldName": "faixa_clientes",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Faixa de clientes (10% cada)",
+                  "axis": {
+                    "title": "Faixa de clientes (10% cada)"
+                  }
+                },
+                "y": {
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "primary": {
+                    "fields": [
+                      {
+                        "fieldName": "sum(participacao_pct)",
+                        "displayName": "% do valor na faixa"
+                      }
+                    ]
+                  },
+                  "secondary": {
+                    "fields": [
+                      {
+                        "fieldName": "max(pct_acumulado)",
+                        "displayName": "% acumulado"
+                      }
+                    ]
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pareto de clientes",
+                "showDescription": true,
+                "description": "Clientes do maior para o menor valor, em 10 faixas de mesmo tamanho. Barra = % do valor negociado na faixa; linha = % acumulado até a faixa."
+              },
+              "annotations": [
+                {
+                  "type": "horizontal-line",
+                  "encodings": {
+                    "y": {
+                      "dataValue": "80",
+                      "dataType": "INTEGER"
+                    },
+                    "label": {
+                      "value": "80% do valor"
+                    },
+                    "color": {
+                      "value": "#E76F51"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 5,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_curva_abc",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "fields": [
+                    {
+                      "name": "classe_abc",
+                      "expression": "`classe_abc`"
+                    },
+                    {
+                      "name": "sum(participacao_pct)",
+                      "expression": "SUM(`participacao_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(participacao_pct)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "% do valor total negociado",
+                  "axis": {
+                    "title": "% do valor total negociado"
+                  }
+                },
+                "y": {
+                  "fieldName": "classe_abc",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Classe ABC",
+                  "axis": {
+                    "title": "Classe ABC"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Curva ABC de produtos",
+                "showDescription": true,
+                "description": "A = até 80% do valor acumulado, B = de 80% a 95%, C = restante."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "txt_sec_promocao",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## O motivo \"Promotion\" aumenta o ticket?"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_ticket_promocao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "grupo_promocao",
+                      "expression": "`grupo_promocao`"
+                    },
+                    {
+                      "name": "avg(valor_liquido_pedido)",
+                      "expression": "AVG(`valor_liquido_pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(valor_liquido_pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket médio (US$)",
+                  "axis": {
+                    "title": "Ticket médio (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "grupo_promocao",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Grupo",
+                  "axis": {
+                    "title": "Grupo"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket médio online: com e sem motivo \"Promotion\"",
+                "showDescription": true,
+                "description": "Apenas pedidos online: o motivo \"On Promotion\" só aparece no canal online e esses pedidos não têm desconto."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 16,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_itens_promocao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "grupo_promocao",
+                      "expression": "`grupo_promocao`"
+                    },
+                    {
+                      "name": "avg(quantidade_pedido)",
+                      "expression": "AVG(`quantidade_pedido`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(quantidade_pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Itens por pedido",
+                  "axis": {
+                    "title": "Itens por pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "grupo_promocao",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Grupo",
+                  "axis": {
+                    "title": "Grupo"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Itens por pedido online: com e sem motivo \"Promotion\"",
+                "showDescription": true,
+                "description": "Apenas pedidos online: o motivo \"On Promotion\" só aparece no canal online e esses pedidos não têm desconto."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 16,
+            "width": 3,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_pedidos_promocao",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "countdistinct(pedido)",
+                      "expression": "COUNT(DISTINCT `pedido`)"
+                    },
+                    {
+                      "name": "grupo_promocao",
+                      "expression": "`grupo_promocao`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "countdistinct(pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Número de pedidos",
+                  "axis": {
+                    "title": "Número de pedidos"
+                  }
+                },
+                "color": {
+                  "fieldName": "grupo_promocao",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Grupo"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Pedidos online por mês: com e sem motivo \"Promotion\""
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_desconto_oferta",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "oferta_especial",
+                      "expression": "`oferta_especial`"
+                    },
+                    {
+                      "name": "sum(valor_desconto)",
+                      "expression": "SUM(`valor_desconto`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(valor_desconto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Desconto concedido (US$)",
+                  "axis": {
+                    "title": "Desconto concedido (US$)"
+                  }
+                },
+                "y": {
+                  "fieldName": "oferta_especial",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  },
+                  "displayName": "Oferta especial",
+                  "axis": {
+                    "title": "Oferta especial"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Desconto concedido por oferta especial",
+                "showDescription": true,
+                "description": "Descontos reais vêm das ofertas especiais e só existem nas vendas para revenda (lojas)."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 20,
+            "width": 3,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "txt_sec_canal",
+            "multilineTextboxSpec": {
+              "lines": [
+                "## Qual canal sustenta o negócio?"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 26,
+            "width": 6,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_canal",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    },
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "color": {
+                  "fieldName": "canal",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Canal"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por mês e canal",
+                "showDescription": true,
+                "description": "Online = clientes pessoa física. Revenda = lojas (pedidos feitos por representantes de venda)."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 27,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_ticket_canal",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_pedidos",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "avg(valor_liquido_pedido)",
+                      "expression": "AVG(`valor_liquido_pedido`)"
+                    },
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "avg(valor_liquido_pedido)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Ticket médio (US$)",
+                  "axis": {
+                    "title": "Ticket médio (US$)"
+                  }
+                },
+                "color": {
+                  "fieldName": "canal",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Canal"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Ticket médio mensal por canal",
+                "showDescription": true,
+                "description": "Ticket médio = (valor bruto - descontos) / número de pedidos."
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 27,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "ln_recompra",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "monthly(data_pedido)",
+                      "expression": "DATE_TRUNC(\"MONTH\", `data_pedido`)"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    },
+                    {
+                      "name": "tipo_compra",
+                      "expression": "`tipo_compra`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "monthly(data_pedido)",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Mês do pedido",
+                  "axis": {
+                    "title": "Mês do pedido"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(valor_bruto)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Valor total negociado (US$)",
+                  "axis": {
+                    "title": "Valor total negociado (US$)"
+                  }
+                },
+                "color": {
+                  "fieldName": "tipo_compra",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Tipo de compra"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Valor total negociado por mês: primeira compra e recompra",
+                "showDescription": true,
+                "description": "Primeira compra = pedido feito na data do primeiro pedido do cliente."
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 32,
+            "width": 3,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "bar_categoria_canal",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "categoria",
+                      "expression": "`categoria`"
+                    },
+                    {
+                      "name": "sum(valor_bruto)",
+                      "expression": "SUM(`valor_bruto`)"
+                    },
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
               "widgetType": "bar",
               "encodings": {
                 "x": {
@@ -1434,31 +2789,38 @@
                   }
                 },
                 "y": {
-                  "fieldName": "status",
+                  "fieldName": "categoria",
                   "scale": {
                     "type": "categorical",
                     "sort": {
                       "by": "x-reversed"
                     }
                   },
-                  "displayName": "Status do pedido",
+                  "displayName": "Categoria",
                   "axis": {
-                    "title": "Status do pedido"
+                    "title": "Categoria"
                   }
                 },
                 "label": {
                   "show": true
+                },
+                "color": {
+                  "fieldName": "canal",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Canal"
                 }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Valor total negociado por status do pedido"
+                "title": "Valor total negociado por categoria e canal"
               }
             }
           },
           "position": {
             "x": 3,
-            "y": 34,
+            "y": 32,
             "width": 3,
             "height": 5
           }
@@ -1474,6 +2836,97 @@
           "widget": {
             "name": "f_periodo",
             "queries": [
+              {
+                "name": "param_ds_promocao_periodo",
+                "query": {
+                  "datasetName": "ds_promocao",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_clientes_periodo",
+                "query": {
+                  "datasetName": "ds_top_clientes",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_cidades_periodo",
+                "query": {
+                  "datasetName": "ds_top_cidades",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_produtos_periodo",
+                "query": {
+                  "datasetName": "ds_top_produtos",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_top_estados_periodo",
+                "query": {
+                  "datasetName": "ds_top_estados",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_produtos_periodo",
+                "query": {
+                  "datasetName": "ds_pareto_produtos",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "param_ds_pareto_clientes_periodo",
+                "query": {
+                  "datasetName": "ds_pareto_clientes",
+                  "parameters": [
+                    {
+                      "name": "periodo",
+                      "keyword": "periodo"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
               {
                 "name": "filter_ds_vendas_data_pedido",
                 "query": {
@@ -1524,6 +2977,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_data_pedido",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "data_pedido",
+                      "expression": "`data_pedido`"
+                    },
+                    {
+                      "name": "data_pedido_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -1531,6 +3001,34 @@
               "widgetType": "filter-date-range-picker",
               "encodings": {
                 "fields": [
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_promocao_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_top_clientes_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_top_cidades_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_top_produtos_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_top_estados_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_pareto_produtos_periodo"
+                  },
+                  {
+                    "parameterName": "periodo",
+                    "queryName": "param_ds_pareto_clientes_periodo"
+                  },
                   {
                     "fieldName": "data_pedido",
                     "displayName": "data_pedido",
@@ -1545,6 +3043,11 @@
                     "fieldName": "data_pedido",
                     "displayName": "data_pedido",
                     "queryName": "filter_ds_motivos_data_pedido"
+                  },
+                  {
+                    "fieldName": "data_pedido",
+                    "displayName": "data_pedido",
+                    "queryName": "filter_ds_pedidos_online_data_pedido"
                   }
                 ]
               },
@@ -1615,6 +3118,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_pais",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "pais",
+                      "expression": "`pais`"
+                    },
+                    {
+                      "name": "pais_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -1636,6 +3156,11 @@
                     "fieldName": "pais",
                     "displayName": "pais",
                     "queryName": "filter_ds_motivos_pais"
+                  },
+                  {
+                    "fieldName": "pais",
+                    "displayName": "pais",
+                    "queryName": "filter_ds_pedidos_online_pais"
                   }
                 ]
               },
@@ -1706,6 +3231,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_estado",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "estado",
+                      "expression": "`estado`"
+                    },
+                    {
+                      "name": "estado_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -1727,6 +3269,11 @@
                     "fieldName": "estado",
                     "displayName": "estado",
                     "queryName": "filter_ds_motivos_estado"
+                  },
+                  {
+                    "fieldName": "estado",
+                    "displayName": "estado",
+                    "queryName": "filter_ds_pedidos_online_estado"
                   }
                 ]
               },
@@ -1797,6 +3344,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_cidade",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "cidade",
+                      "expression": "`cidade`"
+                    },
+                    {
+                      "name": "cidade_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -1818,6 +3382,11 @@
                     "fieldName": "cidade",
                     "displayName": "cidade",
                     "queryName": "filter_ds_motivos_cidade"
+                  },
+                  {
+                    "fieldName": "cidade",
+                    "displayName": "cidade",
+                    "queryName": "filter_ds_pedidos_online_cidade"
                   }
                 ]
               },
@@ -1957,6 +3526,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_cliente",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "cliente",
+                      "expression": "`cliente`"
+                    },
+                    {
+                      "name": "cliente_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -1978,6 +3564,11 @@
                     "fieldName": "cliente",
                     "displayName": "cliente",
                     "queryName": "filter_ds_motivos_cliente"
+                  },
+                  {
+                    "fieldName": "cliente",
+                    "displayName": "cliente",
+                    "queryName": "filter_ds_pedidos_online_cliente"
                   }
                 ]
               },
@@ -2048,6 +3639,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_tipo_cartao",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "tipo_cartao",
+                      "expression": "`tipo_cartao`"
+                    },
+                    {
+                      "name": "tipo_cartao_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -2069,6 +3677,11 @@
                     "fieldName": "tipo_cartao",
                     "displayName": "tipo_cartao",
                     "queryName": "filter_ds_motivos_tipo_cartao"
+                  },
+                  {
+                    "fieldName": "tipo_cartao",
+                    "displayName": "tipo_cartao",
+                    "queryName": "filter_ds_pedidos_online_tipo_cartao"
                   }
                 ]
               },
@@ -2139,6 +3752,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_motivos_venda",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "motivos_venda",
+                      "expression": "`motivos_venda`"
+                    },
+                    {
+                      "name": "motivos_venda_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -2160,6 +3790,11 @@
                     "fieldName": "motivos_venda",
                     "displayName": "motivos_venda",
                     "queryName": "filter_ds_motivos_motivos_venda"
+                  },
+                  {
+                    "fieldName": "motivos_venda",
+                    "displayName": "motivos_venda",
+                    "queryName": "filter_ds_pedidos_online_motivos_venda"
                   }
                 ]
               },
@@ -2230,6 +3865,23 @@
                   ],
                   "disaggregated": false
                 }
+              },
+              {
+                "name": "filter_ds_pedidos_online_status",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    },
+                    {
+                      "name": "status_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
               }
             ],
             "spec": {
@@ -2251,6 +3903,11 @@
                     "fieldName": "status",
                     "displayName": "status",
                     "queryName": "filter_ds_motivos_status"
+                  },
+                  {
+                    "fieldName": "status",
+                    "displayName": "status",
+                    "queryName": "filter_ds_pedidos_online_status"
                   }
                 ]
               },
@@ -2263,6 +3920,119 @@
           "position": {
             "x": 0,
             "y": 8,
+            "width": 1,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "f_canal",
+            "queries": [
+              {
+                "name": "filter_ds_vendas_canal",
+                "query": {
+                  "datasetName": "ds_vendas",
+                  "fields": [
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    },
+                    {
+                      "name": "canal_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "filter_ds_pedidos_canal",
+                "query": {
+                  "datasetName": "ds_pedidos",
+                  "fields": [
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    },
+                    {
+                      "name": "canal_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "filter_ds_motivos_canal",
+                "query": {
+                  "datasetName": "ds_motivos",
+                  "fields": [
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    },
+                    {
+                      "name": "canal_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              },
+              {
+                "name": "filter_ds_pedidos_online_canal",
+                "query": {
+                  "datasetName": "ds_pedidos_online",
+                  "fields": [
+                    {
+                      "name": "canal",
+                      "expression": "`canal`"
+                    },
+                    {
+                      "name": "canal_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "canal",
+                    "displayName": "canal",
+                    "queryName": "filter_ds_vendas_canal"
+                  },
+                  {
+                    "fieldName": "canal",
+                    "displayName": "canal",
+                    "queryName": "filter_ds_pedidos_canal"
+                  },
+                  {
+                    "fieldName": "canal",
+                    "displayName": "canal",
+                    "queryName": "filter_ds_motivos_canal"
+                  },
+                  {
+                    "fieldName": "canal",
+                    "displayName": "canal",
+                    "queryName": "filter_ds_pedidos_online_canal"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Canal de venda"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
             "width": 1,
             "height": 1
           }

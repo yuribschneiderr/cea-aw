@@ -27,7 +27,7 @@ targets:
 resources:
   dashboards:
     cea_aw_dashboard:
-      display_name: "CEA AW - Painel de Vendas"
+      display_name: "Adventure Works - Painel de Vendas"
       file_path: ./src/cea_aw_dashboard.lvdash.json
       warehouse_id: b83ff5bf59f6214a
       embed_credentials: false
