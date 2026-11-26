@@ -33,7 +33,7 @@
 
 # COMMAND ----------
 
-# Setup: libraries, table names, chart style and helpers shared by every cell.
+# Configuração: bibliotecas, nomes das tabelas, estilo dos gráficos e funções auxiliares usadas em todas as células.
 from decimal import Decimal
 
 import matplotlib.pyplot as plt
@@ -44,10 +44,10 @@ import numpy as np
 import pandas as pd
 
 CATALOG = "workspace"
-RAW = f"{CATALOG}.adventure_works"  # source tables (raw copy of the OLTP database)
-MARTS = f"{CATALOG}.dev_cea_aw_marts"  # dimensional model built by dbt
+RAW = f"{CATALOG}.adventure_works"  # tabelas de origem (cópia bruta do banco OLTP)
+MARTS = f"{CATALOG}.dev_cea_aw_marts"  # modelo dimensional construído pelo dbt
 
-# Same palette as the dashboard theme
+# Mesma paleta do tema do dashboard
 TEAL, BLUE, ORANGE, PURPLE, YELLOW, PINK, GREEN, GRAY = [
     "#2A9D8F", "#5B8FD9", "#E76F51", "#9C7BD1", "#E9C46A", "#D45D8C", "#8AB17D", "#7A8B99",
 ]
@@ -68,22 +68,22 @@ plt.rcParams.update({
 
 
 def q(sql: str) -> pd.DataFrame:
-    """Run a read-only query and return a pandas DataFrame.
+    """Executa uma consulta somente leitura e retorna um DataFrame do pandas.
 
-    Spark turns DECIMAL columns into Python Decimal objects, which pandas and matplotlib handle
-    poorly, so every money column used in a chart is cast to DOUBLE in the SQL.
+    O Spark transforma colunas DECIMAL em objetos Decimal do Python, que o pandas e o matplotlib
+    tratam mal, então toda coluna de valor usada em gráfico é convertida para DOUBLE no SQL.
     """
     return spark.sql(sql).toPandas()
 
 
 def br(valor, casas=0):
-    """Format a number in Brazilian style (1.234.567,89)."""
+    """Formata um número no padrão brasileiro (1.234.567,89)."""
     texto = f"{float(valor):,.{casas}f}"
     return texto.replace(",", "_").replace(".", ",").replace("_", ".")
 
 
 def pct(valor, casas=1):
-    """Format a 0-1 share as a Brazilian percentage (12,3%)."""
+    """Formata uma participação de 0 a 1 como percentual brasileiro (12,3%)."""
     return f"{br(100 * float(valor), casas)}%"
 
 
@@ -170,7 +170,7 @@ SELECT
   (SELECT MAX(CAST(orderdate AS DATE)) FROM {RAW}.salesorderheader) AS ultima_data
 """).iloc[0]
 
-# Share of the value whose customer has no personal address (the reason location comes from the order)
+# Participação do valor cujo cliente não tem endereço pessoal (o motivo de a localização vir do pedido)
 sem_endereco_cliente = q(f"""
 SELECT CAST(SUM(CASE WHEN a.businessentityid IS NULL THEN d.unitprice * d.orderqty ELSE 0 END)
           / SUM(d.unitprice * d.orderqty) AS DOUBLE) AS pct
@@ -180,7 +180,7 @@ JOIN {RAW}.customer c ON c.customerid = h.customerid
 LEFT JOIN (SELECT DISTINCT businessentityid FROM {RAW}.businessentityaddress) a ON a.businessentityid = c.personid
 """).iloc[0]["pct"]
 
-# The order header subtotal must equal the sum of its net lines (price x quantity x (1 - discount))
+# O subtotal do cabeçalho do pedido deve ser igual à soma das linhas líquidas (preço x quantidade x (1 - desconto))
 conciliacao = q(f"""
 SELECT
   SUM(CASE WHEN ABS(h.subtotal - l.liquido) > 0.01 THEN 1 ELSE 0 END) AS pedidos_divergentes,
@@ -272,12 +272,12 @@ SELECT date_format(f.data_pedido, 'yyyy-MM') AS mes, {CANAL_SQL} AS canal,
 FROM {MARTS}.fct_pedidos_vendas f
 GROUP BY ALL ORDER BY mes, canal
 """)
-# Months without reseller orders have no row for that channel: pivot and fill them with zero
+# Meses sem pedidos da revenda não têm linha para esse canal: pivotar e preencher com zero
 painel = mensal.pivot_table(index="mes", columns="canal", values=["pedidos", "valor_bruto", "quantidade"],
                             aggfunc="sum", fill_value=0)
 meses = painel.index.tolist()
 x = np.arange(len(meses))
-parciais = [meses.index(m) for m in ("2011-05", "2014-06")]  # first day only / atypical last month
+parciais = [meses.index(m) for m in ("2011-05", "2014-06")]  # só o primeiro dia / último mês atípico
 
 fig, axes = plt.subplots(3, 1, figsize=(13, 10), sharex=True)
 for ax, (medida, titulo, formato, rotulo) in zip(axes, [
@@ -311,7 +311,7 @@ FROM {MARTS}.fct_pedidos_vendas f GROUP BY ALL ORDER BY ano
 anual["valor_bruto_por_mes"] = anual["valor_bruto"] / anual["meses"]
 display(anual)
 
-# Like-for-like comparison: same months (January to May) in 2013 and 2014
+# Comparação equivalente: mesmos meses (janeiro a maio) em 2013 e 2014
 jan_mai = mensal[mensal["mes"].str[5:].between("01", "05")].assign(ano=lambda d: d["mes"].str[:4])
 jan_mai = jan_mai[jan_mai["ano"].isin(["2013", "2014"])].groupby("ano")[["pedidos", "valor_bruto"]].sum()
 print("Janeiro a maio:", {ano: f"{br(v.pedidos)} pedidos, US$ {br(v.valor_bruto / 1e6, 1)} mi" for ano, v in jan_mai.iterrows()})
@@ -329,7 +329,7 @@ print(f"Variação 2014 vs 2013 (jan-mai): pedidos {pct(jan_mai.pedidos['2014'] 
 
 # COMMAND ----------
 
-# Resellers place orders on a few dates: how are their orders spread over the days of the month?
+# A revenda faz pedidos em poucas datas: como seus pedidos se distribuem pelos dias do mês?
 calendario = q(f"""
 SELECT day(f.data_pedido) AS dia, COUNT(DISTINCT f.fk_pedido_venda) AS pedidos
 FROM {MARTS}.fct_pedidos_vendas f WHERE NOT f.flag_pedido_online GROUP BY ALL ORDER BY dia
@@ -361,7 +361,7 @@ print(f"Pedidos de revenda feitos nos dias 1 e 28 a 31: {pct(virada)}")
 
 # COMMAND ----------
 
-# The online channel changed in mid-2013: orders per product category and online ticket per month
+# O canal online mudou em meados de 2013: pedidos por categoria de produto e ticket online por mês
 online_cat = q(f"""
 SELECT date_format(f.data_pedido, 'yyyy-MM') AS mes, p.nome_categoria AS categoria,
   COUNT(DISTINCT f.fk_pedido_venda) AS pedidos
@@ -401,7 +401,7 @@ display(online_cat.loc[["2012-05", "2012-06", "2013-04", "2013-05", "2013-06", "
 
 # COMMAND ----------
 
-# Online bike prices dropped twice: which models entered and left the online catalog?
+# Os preços das bicicletas no online caíram duas vezes: quais modelos entraram e saíram do catálogo online?
 bikes_online = q(f"""
 SELECT date_format(f.data_pedido, 'yyyy-MM') AS mes,
   COUNT(DISTINCT f.fk_pedido_venda) AS pedidos_com_bicicleta,
@@ -411,7 +411,7 @@ JOIN {MARTS}.dim_produtos p ON p.pk_produto = f.fk_produto
 WHERE f.flag_pedido_online AND p.nome_categoria = 'Bikes'
 GROUP BY ALL ORDER BY mes
 """).set_index("mes")
-# Model = product name without color and size (e.g. "Mountain-200 Black, 38" -> "Mountain-200")
+# Modelo = nome do produto sem cor e tamanho (ex.: "Mountain-200 Black, 38" -> "Mountain-200")
 modelos = q(f"""
 SELECT regexp_extract(p.nome_produto, '^([A-Za-z]+-[0-9]+(-W)?)', 1) AS modelo,
   MIN(date_format(f.data_pedido, 'yyyy-MM')) AS primeiro_mes, MAX(date_format(f.data_pedido, 'yyyy-MM')) AS ultimo_mes,
@@ -434,7 +434,7 @@ preco.set_ylim(0, bikes_online["preco_medio_bicicleta"].max() * 1.25)
 preco.set_ylabel("US$ por bicicleta")
 preco.yaxis.set_major_formatter(inteiro)
 preco.grid(False)
-# Dashed lines: months in which new bike models started selling online
+# Linhas tracejadas: meses em que novos modelos de bicicleta começaram a ser vendidos no online
 entradas = sorted(modelos.loc[modelos["primeiro_mes"] > modelos["primeiro_mes"].min(), "primeiro_mes"].unique())
 for mes in entradas:
     ax.axvline(meses_b.index(mes), color=GRAY, ls="--", lw=1)
@@ -556,7 +556,7 @@ plt.show()
 
 # COMMAND ----------
 
-# Distribution of the order value per channel (log scale: values go from a few dollars to six figures)
+# Distribuição do valor do pedido por canal (escala log: os valores vão de poucos dólares a seis dígitos)
 valor_pedido = q(f"""
 SELECT {CANAL_SQL} AS canal, CAST(SUM(f.valor_total_linha) AS DOUBLE) AS valor
 FROM {MARTS}.fct_pedidos_vendas f GROUP BY f.fk_pedido_venda, f.flag_pedido_online
@@ -585,7 +585,7 @@ display(valor_pedido.groupby("canal")["valor"].describe(percentiles=[0.25, 0.5, 
 
 # COMMAND ----------
 
-# Where do the discounts come from? Special offers with a discount actually applied on the line
+# De onde vêm os descontos? Ofertas especiais com desconto de fato aplicado na linha
 ofertas = q(f"""
 SELECT o.descricao_oferta AS oferta, CAST(o.percentual_desconto AS DOUBLE) AS percentual_desconto,
   {CANAL_SQL} AS canal, COUNT(*) AS itens,
@@ -651,7 +651,7 @@ plt.show()
 
 # COMMAND ----------
 
-# Pareto / ABC of products: same rule as the dashboard (A up to 80% of the value, B up to 95%, C the rest)
+# Pareto / ABC de produtos: mesma regra do dashboard (A até 80% do valor, B até 95%, C o restante)
 produtos = q(f"""
 SELECT p.nome_produto AS produto, p.nome_categoria AS categoria,
   CAST(SUM(f.valor_bruto_linha) AS DOUBLE) AS valor_bruto, CAST(SUM(f.quantidade) AS BIGINT) AS quantidade
@@ -702,7 +702,7 @@ plt.show()
 
 # COMMAND ----------
 
-# Best sellers by value and by quantity are different products
+# Os mais vendidos por valor e por quantidade são produtos diferentes
 top_valor = produtos.nlargest(10, "valor_bruto").iloc[::-1]
 top_qtd = produtos.nlargest(10, "quantidade").iloc[::-1]
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 4.8))
@@ -827,7 +827,7 @@ GROUP BY ALL
 """).sort_values(["valor_bruto", "cliente"], ascending=[False, True]).reset_index(drop=True)
 clientes["participacao"] = clientes["valor_bruto"] / clientes["valor_bruto"].sum()
 clientes["pct_acumulado"] = clientes["participacao"].cumsum()
-# Deciles exactly like SQL NTILE(10): the first (n mod 10) groups get one extra customer
+# Decis exatamente como o NTILE(10) do SQL: os primeiros (n mod 10) grupos recebem um cliente a mais
 n = len(clientes)
 tamanhos = [n // 10 + (1 if i < n % 10 else 0) for i in range(10)]
 clientes["decil"] = np.repeat(np.arange(1, 11), tamanhos)
@@ -863,7 +863,7 @@ print("Classe A por tipo de cliente:", classe_a["tipo_pessoa"].value_counts().to
 
 # COMMAND ----------
 
-# Recurrence: how many orders does each customer place over the whole history?
+# Recorrência: quantos pedidos cada cliente faz em todo o histórico?
 faixas_pedidos = pd.cut(clientes["pedidos"], bins=[0, 1, 2, 3, 5, 10, 100], labels=["1", "2", "3", "4-5", "6-10", "11+"])
 recorrencia = (clientes.assign(faixa=faixas_pedidos)
                .pivot_table(index="faixa", columns="canal", values="cliente", aggfunc="count", fill_value=0, observed=False))
@@ -940,7 +940,7 @@ plt.show()
 
 # COMMAND ----------
 
-# Does the "On Promotion" reason raise the ticket? Compare orders with and without it, then only orders with a bike
+# O motivo "On Promotion" aumenta o ticket? Compara pedidos com e sem ele, depois só pedidos com bicicleta
 promocao = q(f"""
 WITH pedidos AS (
   SELECT f.fk_pedido_venda,
@@ -990,7 +990,7 @@ plt.show()
 
 # COMMAND ----------
 
-# Business question: which product sells the most under the "On Promotion" reason?
+# Pergunta de negócio: qual produto mais vende com o motivo "On Promotion"?
 mais_vendidos_promocao = q(f"""
 SELECT p.nome_produto AS produto, p.nome_categoria AS categoria, CAST(SUM(f.quantidade) AS BIGINT) AS quantidade,
   CAST(SUM(f.valor_bruto_linha) AS DOUBLE) AS valor_bruto

@@ -6,7 +6,7 @@ logs/
 *.log
 .user.yml
 
-# Python / Virtualenv
+# Python / Ambientes virtuais
 __pycache__/
 *.pyc
 *.pyo
@@ -19,7 +19,7 @@ dbt-env/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# IDE / Editors
+# IDE / Editores
 .vscode/
 .idea/
 *.suo
@@ -29,7 +29,7 @@ pip-delete-this-directory.txt
 *.swp
 .DS_Store
 
-# Databricks / Local config
+# Databricks / Configuração local
 .databricks/
 *.env
 .env
@@ -38,7 +38,7 @@ pip-delete-this-directory.txt
 .claude/
 CLAUDE.md
 
-# Setup / Steps scripts
+# Scripts de setup / passos
 .steps/
-# Submission files (PDF/JPEG exports and link files for the Zip)
+# Arquivos de entrega (PDFs/JPEG exportados e arquivos com links para o Zip)
 .entrega/
