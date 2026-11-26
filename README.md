@@ -5,7 +5,7 @@ Este projeto implementa um pipeline completo de Analytics Engineering utilizando
 ## Arquitetura e Stack Tecnológica
 
 O projeto foi construído usando as seguintes ferramentas:
-- **PostgreSQL**: Serviu como banco de dados transacional (OLTP) de origem, simulando um ambiente produtivo.
+- **PostgreSQL**: Serviu como banco de dados transacional (OLTP) de origem, simulando um ambiente produtivo. Suas tabelas foram exportadas para arquivos CSV, que são carregados no Databricks como tabelas Delta no schema `adventure_works`.
 - **Databricks (Lakehouse)**: Plataforma principal de processamento e armazenamento (Delta Lake).
 - **dbt (Data Build Tool)**: Ferramenta responsável pela modelagem, transformação e testes de qualidade de dados.
 - **Databricks Asset Bundles (DABs)**: Ferramenta de orquestração CI/CD (Infrastructure as Code) para deploy de jobs no Databricks.
@@ -88,13 +88,33 @@ erDiagram
 
 Para garantir a confiabilidade analítica, implementamos:
 - Testes genéricos (chaves primárias únicas e não nulas).
-- Relacionamentos mapeados nos arquivos `schema.yml` da camada Marts garantindo a Integridade Referencial.
+- Relacionamentos mapeados no arquivo `_marts.yml` da camada Marts garantindo a Integridade Referencial.
 - **Auditoria de Negócio (Singular Test):** Teste contábil auditando que o valor total de vendas brutas (Gross Sales) no ano de 2011 resultou exatamente no montante validado de **$12,646,112.16**.
 
 ## Como Executar o Projeto
 
-1. **Configuração e Ingestão:**
-   Foi criado um script (`ingest_databricks.sh`) que extrai dados do PostgreSQL e envia via Databricks CLI para um Volume (`workspace.adventure_works.raw_data`). Depois, via SQL Editor do Databricks, as tabelas Delta são criadas a partir dos arquivos CSV.
+1. **Simulação do banco de origem (ingestão dos CSVs):**
+   O objetivo desta etapa é simular o banco de dados transacional da Adventure Works dentro do Databricks a partir de arquivos CSV. No projeto, as tabelas foram exportadas do PostgreSQL para CSV (com o comando `\copy` do `psql`); quem for reproduzir o projeto não precisa de um servidor PostgreSQL, basta ter os CSVs. Cada CSV corresponde a uma tabela do sistema de origem, e o schema `workspace.adventure_works` passa a ser a fonte (`source`) do dbt. São usadas 18 tabelas:
+   `Address`, `BusinessEntityAddress`, `CountryRegion`, `CreditCard`, `Customer`, `Person`, `PersonCreditCard`, `Product`, `ProductCategory`, `ProductSubcategory`, `SalesOrderDetail`, `SalesOrderHeader`, `SalesOrderHeaderSalesReason`, `SalesReason`, `SalesTerritory`, `ShipMethod`, `SpecialOffer` e `StateProvince`.
+
+   O processo tem três passos:
+   - Criar o schema e um Volume para receber os arquivos:
+     ```bash
+     databricks schemas create adventure_works workspace
+     databricks volumes create workspace adventure_works raw_data MANAGED
+     ```
+   - Enviar os CSVs para o Volume com a CLI do Databricks:
+     ```bash
+     databricks fs cp <pasta_com_os_csvs>/ dbfs:/Volumes/workspace/adventure_works/raw_data/ --recursive --overwrite
+     ```
+   - Criar uma tabela Delta para cada CSV no SQL Editor do Databricks, com o nome da tabela em minúsculas (exemplo para uma das tabelas; repita para as demais):
+     ```sql
+     CREATE OR REPLACE TABLE workspace.adventure_works.salesorderheader
+     AS SELECT * FROM read_files(
+       '/Volumes/workspace/adventure_works/raw_data/SalesOrderHeader.csv',
+       format => 'csv', header => true, inferSchema => true
+     );
+     ```
 
 2. **Deploy do Bundle:**
    Faça o deploy do código para o Databricks utilizando a CLI do Databricks:
