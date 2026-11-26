@@ -14,8 +14,8 @@ with
         from {{ ref('stg_aw__territorios_venda') }}
     )
 
-    -- Location (city, state, country) is NOT here on purpose: store customers have no personal
-    -- address, so it comes from the ship-to address of each order (see int_dim_localidades).
+    -- A localização (cidade, estado, país) NÃO fica aqui de propósito: clientes do tipo loja não têm
+    -- endereço pessoal, então ela vem do endereço de entrega de cada pedido (ver int_dim_localidades).
     , cliente_enriquecido as (
         select
             clientes.pk_cliente

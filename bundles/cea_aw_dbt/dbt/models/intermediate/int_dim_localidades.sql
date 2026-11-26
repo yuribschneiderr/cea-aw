@@ -1,5 +1,5 @@
--- Location dimension at address grain: city, state and country of each address.
--- The fact links to it through the ship-to address of the order.
+-- Dimensão de localidade no grão de endereço: cidade, estado e país de cada endereço.
+-- A fato se liga a ela pelo endereço de entrega do pedido.
 with
     enderecos as (
         select *

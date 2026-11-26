@@ -9,7 +9,7 @@ with
             cast(territoryid as int) as pk_territorio
             , cast(name as string) as nome_territorio
             , cast(countryregioncode as string) as fk_pais_regiao
-            -- backticks are required: in Databricks SQL "group" is a string literal, not a column
+            -- crases obrigatórias: no Databricks SQL "group" entre aspas duplas é um texto literal, não uma coluna
             , cast(`group` as string) as grupo_territorio
             , cast(salesytd as decimal(18, 2)) as vendas_ano_atual
             , cast(saleslastyear as decimal(18, 2)) as vendas_ano_anterior

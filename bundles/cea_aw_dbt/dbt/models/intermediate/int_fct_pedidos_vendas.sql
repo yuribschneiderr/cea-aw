@@ -24,8 +24,8 @@ with
         from {{ ref('stg_aw__cartoes_credito') }}
     )
 
-    -- One row per order with its sales reasons joined into a single comma-separated string.
-    -- array_sort makes the result deterministic (collect_list alone has no guaranteed order).
+    -- Uma linha por pedido, com seus motivos de venda unidos em um único texto separado por vírgula.
+    -- O array_sort torna o resultado determinístico (o collect_list sozinho não garante a ordem).
     , motivos_agregados as (
         select
             pm.fk_pedido_venda
@@ -38,11 +38,11 @@ with
     , pedido_completo as (
         select
             detalhe.pk_pedido_venda_detalhe
-            -- Degenerate dimension: the order number, used to count distinct orders
+            -- Dimensão degenerada: número do pedido, usado para contar pedidos distintos
             , cabecalho.pk_pedido_venda as fk_pedido_venda
             , cast(date_format(cabecalho.data_pedido, 'yyyyMMdd') as int) as fk_data
             , cabecalho.fk_cliente
-            -- Location comes from the ship-to address of the order (every order has one)
+            -- A localização vem do endereço de entrega do pedido (todo pedido tem um)
             , cabecalho.fk_endereco_envio as fk_localidade
             , cabecalho.fk_metodo_envio
             , detalhe.fk_produto
@@ -66,7 +66,7 @@ with
             , detalhe.quantidade
             , detalhe.preco_unitario
             , detalhe.desconto_unitario
-            -- Line metrics (data dictionary): gross = price * qty; net = gross * (1 - discount)
+            -- Métricas da linha (dicionário de dados): bruto = preço * qtd; líquido = bruto * (1 - desconto)
             , cast(detalhe.preco_unitario * detalhe.quantidade as decimal(38, 6)) as valor_bruto_linha
             , cast(
                 detalhe.preco_unitario * detalhe.quantidade * detalhe.desconto_unitario as decimal(38, 6)
@@ -74,13 +74,13 @@ with
             , cast(
                 detalhe.preco_unitario * detalhe.quantidade * (1 - detalhe.desconto_unitario) as decimal(38, 6)
               ) as valor_total_linha
-            -- Header amounts repeat on every line of the order: do not sum them at line grain
+            -- Valores do cabeçalho se repetem em todas as linhas do pedido: não somar no grão de linha
             , cabecalho.subtotal
             , cabecalho.valor_imposto
             , cabecalho.valor_frete
             , cabecalho.valor_total_devido
 
-            -- Attributes denormalized into the fact
+            -- Atributos desnormalizados na fato
             , coalesce(cartoes.tipo_cartao, 'N/A') as tipo_cartao
             , coalesce(motivos_agregados.motivos_venda, 'Nenhum') as motivos_venda
 
